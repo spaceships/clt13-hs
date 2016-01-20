@@ -13,63 +13,84 @@
 
 using namespace std;
 
-std::ostream& operator<<(std::ostream& os, Ciphertext& c) {
-    os << "<Ciphertext of degree=" << c.get_degree();
-
-    #if VERBOSE
-    os << " and with bit-noise=" << c.get_noise() << "/" << (eta-alpha);
-	
-	#if DISPLAY_MESSAGES
-	unsigned i;
-	mpz_class* m;
-	m = new mpz_class[N];
-  	c.Decrypt_with_sk(m);
-	os << std::endl;
-	os << "          m=(";
-    for (i=0; i<N; i++)
-    	os << m[i] << ((i==(N-1))?") ":" ");
-    #endif
-
-    #endif 
-    // #if VERBOSE
-    os << ">";
-    return os;
-}
-
-void tobv(unsigned long inp, bool *res) {
-  unsigned long mangle = inp;
-  for (int i = 0; i < ell; i++) {
-    if (mangle > 0) {
-      res[i] = mangle & 1;
-      mangle >>= 1;
-    } else {
-      res[i] = 0;
+bool expect(const string& desc, bool expected, bool recieved) {
+    if (expected != recieved) {
+        cout << "\033[1;41m";
     }
-  }
-}
-
-unsigned long frombv(mpz_class* inp) {
-  unsigned long ret = 0;
-  for (unsigned int i = sizeof(unsigned long) * 8; i > 0; i--) {
-    if (inp[i] > 0) ret += 1;
-    ret <<= 1;
-  }
-  return ret;
+    cout << desc << recieved;
+    if (expected != recieved) {
+        cout << "\033[0m";
+    }
+    cout << endl;
+    return expected == recieved;
 }
 
 int main()
 {
 	// PRNG
-	gmp_randclass* random = new gmp_randclass(gmp_randinit_default);
-	MMKey key(random);
+    clt_state mmap(20, 10, 8, 400, 1);
 
-    Ciphertext x0 = key.Encrypt((unsigned long)2);
-    Ciphertext x1 = key.Encrypt((unsigned long)2);
+
+    encoding x0 = mmap.encode((unsigned long)200);
+    encoding x1 = mmap.encode((unsigned long)200);
 
     // 2 - 2 ?= 0
 
-    cout << key.is_zero(x0 - x1) << endl;
-    cout << key.is_zero(x0) << endl;
+    cout << mmap.is_zero(x0 - x1) << endl;
+    cout << mmap.is_zero(x0) << endl;
     
     return 0;
+
+    ////mpz_class x = 1;
+    //mpz_class x = 0;
+    //while (x == 0) {
+        //x = rand() % mmap.get_modulus();
+    //}
+    //cout << "x = " << x << endl;
+
+    //// addition test
+    //index_set ix;
+    //for (unsigned long i = 0; i < num_indices; i++) {
+        //ix.insert(i);
+    //}
+    //encoding x0 = mmap.encode(mpz_class(0), ix);
+    //encoding x1 = mmap.encode(mpz_class(0), ix);
+    //encoding xp = x0 + x1;
+    //ok = expect("is_zero(0 + 0) = ", 1, xp.is_zero());
+
+    //// subtraction test
+    //ix.clear();
+    //for (unsigned long i = 0; i < num_indices; i++) {
+        //ix.insert(i);
+    //}
+    //x0 = mmap.encode(x, ix);
+    //x1 = mmap.encode(x, ix);
+    //xp = x0 - x1;
+    //ok &= expect("is_zero(x - x) = ", 1, xp.is_zero());
+
+    //// multiplication by zero test
+    //ix.clear();
+    //for (unsigned long i = 0; i < num_indices - 1; i++) {
+        //ix.insert(i);
+    //}
+    //x0 = mmap.encode(x, ix);
+    //ix.clear();
+    //ix.insert(num_indices - 1);
+    //encoding zero = mmap.encode(mpz_class(0), ix); 
+    //xp = x0 * zero; 
+    //ok &= expect("is_zero(x * 0) = ", 1, xp.is_zero());
+
+    //// multiplication by one test
+    //ix.clear();
+    //for (unsigned long i = 0; i < num_indices - 1; i++) {
+        //ix.insert(i);
+    //}
+    //x0 = mmap.encode(x, ix);
+    //ix.clear();
+    //ix.insert(num_indices - 1);
+    //encoding one = mmap.encode(mpz_class(1), ix); 
+    //xp = x0 * one; 
+    //ok &= expect("is_zero(x * 1) = ", 0, xp.is_zero());
+
+    //return !ok;
 }
