@@ -1,5 +1,5 @@
-#ifndef __MULTIMAP_H
-#define __MULTIMAP_H
+#ifndef __CLT13_H
+#define __CLT13_H
 
 #include <iostream>
 #include <fstream>
@@ -155,6 +155,7 @@ public:
 	MMKey(gmp_randclass* random);
 	~MMKey();
 	Ciphertext Encrypt(bool b[ell]);
+    Ciphertext Encrypt(unsigned long m);
 	mpz_class Encrypt_with_sk(mpz_class* m, long nbBits, long degree);
 	mpz_class Encrypt_with_sk(unsigned long m, long nbBits, long degree);
 	void Decrypt_with_sk(mpz_class* m, const Ciphertext& c);

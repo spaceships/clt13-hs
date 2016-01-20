@@ -1,4 +1,4 @@
-#include "Multimap.h"
+#include "clt13.hpp"
 
 /*
 	Return current time in sec.
@@ -101,6 +101,18 @@ long Ciphertext::get_noise()
 mpz_class Ciphertext::deriveSessionKey()
 {
 	return ((key->zero_test(cval, degree))>>(key->nbBits(key->get_x0())-sessionKeyBits));
+}
+
+/*
+  Initialization of a ciphertext from another ciphertext
+*/
+Ciphertext& Ciphertext::operator=(const Ciphertext& c)
+{
+  key = c.key;
+  cval = c.cval;
+  degree = c.degree;
+
+  return *this;
 }
 
 /*
@@ -293,6 +305,21 @@ Ciphertext MMKey::Encrypt(bool b[ell])
 		if (b[i]) c += xp[i];
 
 	return Ciphertext(this, mod(c, x0), 0);
+}
+
+/*
+	Encrypt bit vector b using public key (subset sum)
+*/
+Ciphertext MMKey::Encrypt(unsigned long m)
+{
+    mpz_class cs[N];
+    mpz_class mp = m;
+
+	for (long i=0; i<N; i++)
+    mpz_mod(cs[i].get_mpz_t(), mp.get_mpz_t(), g[i].get_mpz_t());
+
+    mpz_class c = Encrypt_with_sk(cs, rho, 1);
+	return Ciphertext(this, c, 1);
 }
 
 /*
