@@ -142,12 +142,11 @@ encoding& encoding::operator*=(const encoding& c) {/*{{{*/
 /*}}}*/
 ////////////////////////////////////////////////////////////////////////////////
 // clt_state class
-clt_state::clt_state/*{{{*/
+clt_state::clt_state
 ( 
     unsigned long secparam,
     unsigned long kappa_,
     unsigned long nzs_,
-    unsigned long etap,
     int verbose
 ){
     kappa = kappa_;
@@ -158,27 +157,22 @@ clt_state::clt_state/*{{{*/
     rho   = secparam;
     rho_f = kappa * (rho + alpha + 2);
     eta   = rho_f + alpha + 2 * beta + secparam + 8;
-    nu    = eta - beta - rho_f - secparam + 3; // threshold for zero testing
+    nu    = eta - beta - rho_f - secparam - 3; // threshold for zero testing
     n     = (int) (eta * log2((float) secparam));
     nzs   = nzs_;
 
-    unsigned long i, j;
+    unsigned long i;
     double startTime;
 
     // Define PRNG
 	rng = new gmp_randclass(gmp_randinit_default);
 
-    if (eta % etap) {
-        etap += eta % etap;
-    }
-    
     if (verbose) {
         fprintf(stderr, "  Security Parameter: %ld\n", secparam);
         fprintf(stderr, "  Kappa: %ld\n", kappa);
         fprintf(stderr, "  Alpha: %ld\n", alpha);
         fprintf(stderr, "  Beta: %ld\n", beta);
         fprintf(stderr, "  Eta: %ld\n", eta);
-        fprintf(stderr, "  Etap: %ld\n", etap);
         fprintf(stderr, "  Nu: %ld\n", nu);
         fprintf(stderr, "  Rho: %ld\n", rho);
         fprintf(stderr, "  Rho_f: %ld\n", rho_f);
@@ -186,31 +180,17 @@ clt_state::clt_state/*{{{*/
         fprintf(stderr, "  Number of Zs: %ld\n", nzs);
     }
 
-    // Generate the p_i's
-    // /!\ Generating primes of eta bits can be very long, 
-    // so eventually we generate p as product of primes of etap bits
     x0 = 1;
-    unsigned long niter=(unsigned)eta/etap;
-    unsigned long psize;
 
     startTime=currentTime();
     std::cout << "Generate the p_i's and x0: " << std::flush;
     mpz_class p_tmp, p_unif;
     p = new mpz_class[n];
-    #pragma omp parallel for private(p_tmp, p_unif, j)
+    #pragma omp parallel for private(p_tmp, p_unif)
     for (i=0; i<n; i++)
     {
-        p[i] = 1;
-        for (j=0; j<niter; j++)
-        {
-          if (j<(niter-1)) psize=etap;
-          else psize=eta-etap*(niter-1);
-          
-          p_unif = rng->get_z_bits(psize);
-          
-          mpz_nextprime(p_tmp.get_mpz_t(), p_unif.get_mpz_t());
-          p[i] *= p_tmp;
-        }
+        mpz_class p_unif = rng->get_z_bits(eta);
+        mpz_nextprime(p[i].get_mpz_t(), p_unif.get_mpz_t());
         #pragma omp critical
         {
             x0 *= p[i];
@@ -291,19 +271,30 @@ clt_state::clt_state/*{{{*/
     //return encoding(this, mod(c, x0), 0);
 //}
 
-encoding clt_state::Encrypt(unsigned long m) {
+encoding clt_state::encode(mpz_class m) {
     mpz_class cs[n];
-    mpz_class mp = m;
+    cs[0] = m;
+    for (unsigned long i=1; i<n; i++)
+        cs[i] = 0;
+    mpz_class c = encrypt(cs, 1);
+    return encoding(this, c, 1);
+}
 
-    for (unsigned long i=0; i<n; i++)
-        mpz_mod(cs[i].get_mpz_t(), mp.get_mpz_t(), g[i].get_mpz_t());
-
-    mpz_class c = Encrypt_with_sk(cs, rho, 1);
+encoding clt_state::encode(vector<mpz_class> m) {
+    mpz_class cs[n];
+    for (unsigned long i=0; i < n; i++) {
+        if (i < m.size()) {
+            cs[i] = m[i];
+        } else {
+            cs[i] = 0;
+        }
+    }
+    mpz_class c = encrypt(cs, 1);
     return encoding(this, c, 1);
 }
 
 // Encrypt input ARRAY `m' with `nbBits' random and initial degree `degree' with secret key
-mpz_class clt_state::Encrypt_with_sk(mpz_class* m, unsigned long nbBits, unsigned long degree) {
+mpz_class clt_state::encrypt(mpz_class* m, unsigned long degree) {
     std::cout << ". " << std::flush;
 
     unsigned long i, j;
@@ -311,10 +302,10 @@ mpz_class clt_state::Encrypt_with_sk(mpz_class* m, unsigned long nbBits, unsigne
     mpz_class res=0;
 
     for (i=0; i<n; i++) {
-        res += (m[i] + g[i]*generateRandom(nbBits, rng)) * crtCoeff[i];
+        res += (m[i] + g[i]*generateRandom(rho, rng)) * crtCoeff[i];
     }
 
-    res = mod(res, x0);
+    //res = mod(res, x0);
     for (j=degree; j>0; j--)
         res = mod(res*zinv, x0);
 
@@ -326,31 +317,6 @@ mpz_class clt_state::Encrypt_with_sk(mpz_class* m, unsigned long nbBits, unsigne
 // Destruction of clt_state
 clt_state::~clt_state() {
     //
-}
-
-// Encrypt input VALUE `m' with `nbBits' random and initial degree `degree' with secret key
-mpz_class clt_state::Encrypt_with_sk(unsigned long m, unsigned long nbBits, unsigned long degree) {
-    std::cout << ". " << std::flush;
-
-    unsigned long i, j;
-
-    mpz_class input, res=0;
-    for (i=0; i<n; i++) {
-        if (m <= 1)
-            input = m + g[i]*generateRandom(nbBits, rng);
-        else
-            input = generateRandom(m, rng) + g[i]*generateRandom(nbBits, rng);
-
-        res += input*crtCoeff[i];
-    }
-
-    res = mod(res, x0);
-    for (j=degree; j>0; j--)
-        res = mod(res*zinv, x0);
-
-    std::cout << "* " << std::flush;
-
-    return res;
 }
 
 // Compute c mod x0

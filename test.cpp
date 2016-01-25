@@ -28,7 +28,7 @@ bool expect(const string& desc, bool expected, bool recieved) {
 int main()
 {
 	// PRNG
-    clt_state mmap(20, 10, 8, 400, 1);
+    clt_state mmap(10, 1, 0, 1);
 
 
     encoding x0 = mmap.encode((unsigned long)200);

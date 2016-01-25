@@ -1,5 +1,5 @@
 CC 		= g++
-CCFLAGS = -Wall --std=c++11 -g -O0 -fopenmp #-lrt
+CCFLAGS = -Wall -fdiagnostics-color --std=c++11 -g -O0 -fopenmp #-lrt
 IFLAGS 	= -I/opt/local/include 
 LFLAGS 	= -L/opt/local/lib -lgmpxx -lgmp
 

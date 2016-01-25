@@ -84,7 +84,6 @@ public:
         unsigned long secparam,
         unsigned long kappa,
         unsigned long nzs,
-        unsigned long etap,
         int verbose = 0
     );
 
@@ -92,6 +91,7 @@ public:
 
     encoding encode(mpz_class m);
     encoding encode(vector<mpz_class> m);
+    mpz_class encrypt(mpz_class* m, unsigned long degree);
 
 	mpz_class reduce(const mpz_class &c);
 	unsigned long get_noise(const mpz_class& c, unsigned long degree);
