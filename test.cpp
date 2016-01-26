@@ -27,71 +27,63 @@ bool expect(const string& desc, bool expected, bool recieved) {
 
 int main()
 {
-    //clt_state(unsigned long secparam, unsigned long kappa, unsigned long nzs, int verbose = 0);
-    clt_state mmap(10, 10, 2, 1);
+    bool ok;
+    unsigned long num_indices = 10;
+    unsigned long lambda = 30;
+    unsigned long kappa = 1;
+    unsigned long verbose = 1;
+    clt_state mmap(lambda, kappa, num_indices, verbose);
 
-    index_set ix = {0,1};
+    //mpz_class x = 1;
+    mpz_class x = 0;
+    while (x == 0) {
+        x = rand() % mmap.g[0];
+    }
+    cout << "x = " << x << endl;
 
-    encoding x0 = mmap.encode((unsigned long)200, ix);
-    encoding x1 = mmap.encode((unsigned long)200, ix);
+    // addition test
+    index_set ix;
+    for (unsigned long i = 0; i < num_indices; i++) {
+        ix.insert(i);
+    }
+    encoding x0 = mmap.encode(mpz_class(0), ix);
+    encoding x1 = mmap.encode(mpz_class(0), ix);
+    encoding xp = x0 + x1;
+    ok = expect("is_zero(0 + 0) = ", 1, mmap.is_zero(xp));
 
-    // 2 - 2 ?= 0
+    // subtraction test
+    ix.clear();
+    for (unsigned long i = 0; i < num_indices; i++) {
+        ix.insert(i);
+    }
+    x0 = mmap.encode(x, ix);
+    x1 = mmap.encode(x, ix);
+    xp = x0 - x1;
+    ok &= expect("is_zero(x - x) = ", 1, mmap.is_zero(xp));
 
-    cout << mmap.is_zero(x0 - x1) << endl;
-    cout << mmap.is_zero(x0) << endl;
-    
-    return 0;
+    // multiplication by zero test
+    ix.clear();
+    for (unsigned long i = 0; i < num_indices - 1; i++) {
+        ix.insert(i);
+    }
+    x0 = mmap.encode(x, ix);
+    ix.clear();
+    ix.insert(num_indices - 1);
+    encoding zero = mmap.encode(mpz_class(0), ix); 
+    xp = x0 * zero; 
+    ok &= expect("is_zero(x * 0) = ", 1, mmap.is_zero(xp));
 
-    ////mpz_class x = 1;
-    //mpz_class x = 0;
-    //while (x == 0) {
-        //x = rand() % mmap.get_modulus();
-    //}
-    //cout << "x = " << x << endl;
+    // multiplication by one test
+    ix.clear();
+    for (unsigned long i = 0; i < num_indices - 1; i++) {
+        ix.insert(i);
+    }
+    x0 = mmap.encode(x, ix);
+    ix.clear();
+    ix.insert(num_indices - 1);
+    encoding one = mmap.encode(mpz_class(1), ix); 
+    xp = x0 * one; 
+    ok &= expect("is_zero(x * 1) = ", 0, mmap.is_zero(xp));
 
-    //// addition test
-    //index_set ix;
-    //for (unsigned long i = 0; i < num_indices; i++) {
-        //ix.insert(i);
-    //}
-    //encoding x0 = mmap.encode(mpz_class(0), ix);
-    //encoding x1 = mmap.encode(mpz_class(0), ix);
-    //encoding xp = x0 + x1;
-    //ok = expect("is_zero(0 + 0) = ", 1, xp.is_zero());
-
-    //// subtraction test
-    //ix.clear();
-    //for (unsigned long i = 0; i < num_indices; i++) {
-        //ix.insert(i);
-    //}
-    //x0 = mmap.encode(x, ix);
-    //x1 = mmap.encode(x, ix);
-    //xp = x0 - x1;
-    //ok &= expect("is_zero(x - x) = ", 1, xp.is_zero());
-
-    //// multiplication by zero test
-    //ix.clear();
-    //for (unsigned long i = 0; i < num_indices - 1; i++) {
-        //ix.insert(i);
-    //}
-    //x0 = mmap.encode(x, ix);
-    //ix.clear();
-    //ix.insert(num_indices - 1);
-    //encoding zero = mmap.encode(mpz_class(0), ix); 
-    //xp = x0 * zero; 
-    //ok &= expect("is_zero(x * 0) = ", 1, xp.is_zero());
-
-    //// multiplication by one test
-    //ix.clear();
-    //for (unsigned long i = 0; i < num_indices - 1; i++) {
-        //ix.insert(i);
-    //}
-    //x0 = mmap.encode(x, ix);
-    //ix.clear();
-    //ix.insert(num_indices - 1);
-    //encoding one = mmap.encode(mpz_class(1), ix); 
-    //xp = x0 * one; 
-    //ok &= expect("is_zero(x * 1) = ", 0, xp.is_zero());
-
-    //return !ok;
+    return !ok;
 }

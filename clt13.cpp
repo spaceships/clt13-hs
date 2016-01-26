@@ -29,7 +29,8 @@ inline mpz_class mod(const mpz_class &a, const mpz_class &b) {
 inline mpz_class modNear(const mpz_class &a, const mpz_class &b) {
     mpz_class res;
     mpz_mod (res.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
-    if (res > (b>>1)) res -= b;
+    if (res > (b >> 1)) 
+        res -= b;
     return res;
 }
 
@@ -127,7 +128,7 @@ encoding& encoding::operator*=(const encoding& c) {/*{{{*/
     assert(distinct_indices(index, c.index));
     value *= c.value;
     value = mmap->reduce(value);
-    index = c.index;
+    index = index_union(index, c.index);
     return *this;
 }
 /*}}}*/
@@ -224,7 +225,7 @@ clt_state::clt_state
     // Generate z
     startTime=currentTime();
     std::cout << "Generate zs and zinvs: " << std::flush;
-//#pragma omp parallel for private(g_tmp)
+#pragma omp parallel for private(g_tmp)
     for (i = 0; i < nzs; i++) {
         int ret;
         // ensure the zs are invertible & invert them
@@ -315,6 +316,6 @@ index_set clt_state::top_level_index() {
 
 bool clt_state::is_zero(const encoding &c) {
     assert(c.index == top_level_index());
-    mpz_class tmp = (c.value * pzt) % x0;
+    mpz_class tmp = modNear(c.value * pzt, x0);
     return mpz_sizeinbase(tmp.get_mpz_t(), 2) < (mpz_sizeinbase(x0.get_mpz_t(), 2) - nu);
 }
