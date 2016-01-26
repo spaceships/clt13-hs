@@ -38,11 +38,6 @@ inline mpz_class quotNear(const mpz_class &a, const mpz_class &b) {
     return (a-modNear(a,b))/b;
 }
 
-// Initialization of a ciphertext to 0
-encoding::encoding() {
-    cval = 0;
-    degree = 0;
-}
 /*}}}*/
 // index tools/*{{{*/
 
@@ -95,51 +90,48 @@ vector<index_set> exclusive_partition_family (unsigned lambda, unsigned d, unsig
 ////////////////////////////////////////////////////////////////////////////////
 // ciphertext class
 encoding::encoding(const encoding& c) {/*{{{*/
-    key = c.key;
-    cval = c.cval;
-    degree = c.degree;
+    mmap  = c.mmap;
+    value = c.value;
+    index = c.index;
 }
 /*}}}*/
-encoding::encoding(clt_state* mmkey, mpz_class c, unsigned long deg) {/*{{{*/
-    key = mmkey;
-    cval = c;
-    degree = deg;
-}
-/*}}}*/
-unsigned long encoding::get_noise() {/*{{{*/
-    return key->get_noise(cval, degree);
+encoding::encoding(clt_state* mmkey, mpz_class c, const index_set &ix) {/*{{{*/
+    mmap  = mmkey;
+    value = c;
+    index = ix;
 }
 /*}}}*/
 encoding& encoding::operator=(const encoding& c) {/*{{{*/
-  key = c.key;
-  cval = c.cval;
-  degree = c.degree;
+  mmap  = c.mmap;
+  value = c.value;
+  index = c.index;
 
   return *this;
 }
 /*}}}*/
 encoding& encoding::operator+=(const encoding& c) {/*{{{*/
-    assert(degree == c.degree);
-    cval += c.cval;
-    cval = key->reduce(cval);
+    assert(index == c.index);
+    value += c.value;
+    value = mmap->reduce(value);
     return *this;
 }
 /*}}}*/
 encoding& encoding::operator-=(const encoding& c) {/*{{{*/
-    assert(degree == c.degree);
-    cval -= c.cval;
-    cval = key->reduce(cval);
+    assert(index == c.index);
+    value -= c.value;
+    value = mmap->reduce(value);
     return *this;
 }
 /*}}}*/
 encoding& encoding::operator*=(const encoding& c) {/*{{{*/
-    if (degree+c.degree>0)
-        degree += c.degree;
-    cval *= c.cval;
-    cval = key->reduce(cval);
+    assert(distinct_indices(index, c.index));
+    value *= c.value;
+    value = mmap->reduce(value);
+    index = c.index;
     return *this;
 }
 /*}}}*/
+
 ////////////////////////////////////////////////////////////////////////////////
 // clt_state class
 clt_state::clt_state
@@ -163,6 +155,9 @@ clt_state::clt_state
 
     unsigned long i;
     double startTime;
+
+    mpz_class zs [nzs];
+    zinvs = new mpz_class[nzs];
 
     // Define PRNG
 	rng = new gmp_randclass(gmp_randinit_default);
@@ -228,27 +223,26 @@ clt_state::clt_state
 
     // Generate z
     startTime=currentTime();
-    std::cout << "Generate z and zinv: " << std::flush;
-    int ret;
-    do {
-        z = rng->get_z_range(x0);
-        ret = mpz_invert(zinv.get_mpz_t(), z.get_mpz_t(), x0.get_mpz_t());
-    } while (ret == 0);
+    std::cout << "Generate zs and zinvs: " << std::flush;
+//#pragma omp parallel for private(g_tmp)
+    for (i = 0; i < nzs; i++) {
+        int ret;
+        // ensure the zs are invertible & invert them
+        do {
+            zs[i] = rng->get_z_range(x0);
+            ret   = mpz_invert(zinvs[i].get_mpz_t(), zs[i].get_mpz_t(), x0.get_mpz_t());
+        } while (ret == 0);
+    }
     std::cout << (double)(currentTime()-startTime) << "s" << std::endl;
 
-    // Generate y
-	std::cout << "Generate y: " << std::flush;
-	startTime=currentTime();
-	y = encode((unsigned long) 1);
-	std::cout << (double)(currentTime()-startTime) << "s" << std::endl;
-    
     // Generate zero-tester pzt
     std::cout << "Generate the zero-tester pzt: " << std::flush;
     startTime=currentTime();
     mpz_class input;
-    zkappa=1;
-    for (i=0; i<kappa; i++)
-        zkappa = mod(zkappa*z, x0);
+    zkappa = 1;
+    for (i = 0; i < nzs; i++) {
+        zkappa = mod(zkappa * zs[i], x0);
+    }
     pzt=0;
 #pragma omp parallel for private(i, input)
     for (i=0; i<n; i++) {
@@ -263,24 +257,16 @@ clt_state::clt_state
     std::cout << (double)(currentTime()-startTime) << "s" << std::endl;
 }
 
-//// Encrypt bit vector b using public key (subset sum)
-//encoding clt_state::Encrypt(bool b[ell]) {
-    //mpz_class c=0;
-    //for (long i=0; i<ell; i++)
-        //if (b[i]) c += xp[i];
-    //return encoding(this, mod(c, x0), 0);
-//}
-
-encoding clt_state::encode(mpz_class m) {
+encoding clt_state::encode(mpz_class m, const index_set &ix) {
     mpz_class cs[n];
     cs[0] = m;
     for (unsigned long i=1; i<n; i++)
         cs[i] = 0;
-    mpz_class c = encrypt(cs, 1);
-    return encoding(this, c, 1);
+    mpz_class c = encrypt(cs, ix);
+    return encoding(this, c, ix);
 }
 
-encoding clt_state::encode(vector<mpz_class> m) {
+encoding clt_state::encode(vector<mpz_class> m, const index_set &ix) {
     mpz_class cs[n];
     for (unsigned long i=0; i < n; i++) {
         if (i < m.size()) {
@@ -289,28 +275,23 @@ encoding clt_state::encode(vector<mpz_class> m) {
             cs[i] = 0;
         }
     }
-    mpz_class c = encrypt(cs, 1);
-    return encoding(this, c, 1);
+    mpz_class c = encrypt(cs, ix);
+    return encoding(this, c, ix);
 }
 
 // Encrypt input ARRAY `m' with `nbBits' random and initial degree `degree' with secret key
-mpz_class clt_state::encrypt(mpz_class* m, unsigned long degree) {
+mpz_class clt_state::encrypt(mpz_class* m, const index_set &ix) {
     std::cout << ". " << std::flush;
-
-    unsigned long i, j;
-
+    unsigned long i;
     mpz_class res=0;
-
-    for (i=0; i<n; i++) {
+    for (i = 0; i < n; i++) {
         res += (m[i] + g[i]*generateRandom(rho, rng)) * crtCoeff[i];
     }
-
-    //res = mod(res, x0);
-    for (j=degree; j>0; j--)
-        res = mod(res*zinv, x0);
-
+    res = mod(res, x0);
+    for (auto j: ix) {
+        res = mod(res * zinvs[j], x0);
+    }
     std::cout << "* " << std::flush;
-
     return res;
 }
 
@@ -324,53 +305,16 @@ mpz_class clt_state::reduce(const mpz_class &c) {
     return mod(c, x0);
 }
 
-// Get noise in a ciphertext value c of degree `degree'
-unsigned long clt_state::get_noise(const mpz_class& c, unsigned long degree) {
-    unsigned long i;
-    mpz_class value = c;
-    unsigned long max = 0, nbBits;
-    mpz_class noise;
-
-    for (i=degree; i>0; i--) {
-        value *= z;
+index_set clt_state::top_level_index() {
+    index_set ret;
+    for (unsigned i = 0; i < nzs; i++) {
+        ret.insert(i);
     }
-
-#pragma omp parallel for private(noise, nbBits)
-    for (i=0; i<n; i++) {
-        noise = quotNear(modNear(value, p[i]), g[i]);
-        nbBits = mpz_sizeinbase(noise.get_mpz_t(),2);
-#pragma omp critical
-        {
-            if (nbBits>max) max = nbBits;
-        }
-    }
-    return max;
+    return ret;
 }
 
-// Return w = (c*y^(kappa-degree))*pzt mod x0
-// We multiply by y^(kappa-degree) to transform the degree-level
-// encoding into a kappa-level encoding, so that the z^kappa mask
-// included in pzt can be canceled out
-mpz_class clt_state::zero_test(const mpz_class &c, unsigned long degree) {
-    assert(degree<=kappa);
-
-    mpz_class value = c;
-
-    for (unsigned long i=kappa-degree; i>0; i--) {
-        value = modNear(value*y.cval, x0);
-    }
-    value = modNear(value*pzt,x0);
-
-    return value;
-}
-
-// Return number of bits of pzt
-unsigned long clt_state::nbBits(const mpz_class &pzt) {
-    return mpz_sizeinbase(pzt.get_mpz_t(), 2);
-}
-
-// Check whether c is an encoding of 0
 bool clt_state::is_zero(const encoding &c) {
-    mpz_class value = zero_test(c.get_cval(), c.get_degree());
-    return (nbBits(value)<(nbBits(x0)-nu)) ? 1 : 0;
+    assert(c.index == top_level_index());
+    mpz_class tmp = (c.value * pzt) % x0;
+    return mpz_sizeinbase(tmp.get_mpz_t(), 2) < (mpz_sizeinbase(x0.get_mpz_t(), 2) - nu);
 }

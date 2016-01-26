@@ -26,18 +26,13 @@ class clt_state;
 
 class encoding {
 public:
-	mpz_class cval;
-	long degree;
-	clt_state* key;
+	mpz_class value;
+	//long degree;
+	index_set index;
+	clt_state* mmap;
 
-	encoding();
 	encoding(const encoding& c);
-	encoding(clt_state* mmkey, mpz_class c, unsigned long deg);
-
-	unsigned long get_noise();
-
-	unsigned long get_degree() const {return degree;};
-	mpz_class get_cval() const {return cval;};
+	encoding(clt_state* mmkey, mpz_class c, const index_set &ix);
 
 	encoding& operator =(const encoding&);
 	encoding& operator+=(const encoding&);
@@ -64,12 +59,11 @@ class clt_state {
 public:
 	gmp_randclass* 	rng;
 	mpz_class* 		p; 				//	[N];
-	mpz_class 		x0, z, zkappa;
-	mpz_class 		zinv; 			//	[N];
+	mpz_class 		x0, zkappa;
+	mpz_class*		zinvs; 			//	[N];
 	mpz_class* 		crtCoeff; 		//	[N];
 	mpz_class* 		g; 				//	[N];
 	mpz_class 		pzt;
-	encoding 		y;
 
     unsigned long secparam;
     unsigned long n;
@@ -79,26 +73,18 @@ public:
     unsigned long kappa;
     unsigned long beta;
 
-    clt_state
-    ( 
-        unsigned long secparam,
-        unsigned long kappa,
-        unsigned long nzs,
-        int verbose = 0
-    );
+    clt_state(unsigned long secparam, unsigned long kappa, unsigned long nzs, int verbose = 0);
 
 	~clt_state();
 
-    encoding encode(mpz_class m);
-    encoding encode(vector<mpz_class> m);
-    mpz_class encrypt(mpz_class* m, unsigned long degree);
+    encoding encode(mpz_class m, const index_set &ix);
+    encoding encode(vector<mpz_class> m, const index_set &ix);
+    mpz_class encrypt(mpz_class* m, const index_set &ix);
 
+    index_set top_level_index();
 	mpz_class reduce(const mpz_class &c);
-	unsigned long get_noise(const mpz_class& c, unsigned long degree);
-	mpz_class zero_test(const mpz_class &c, unsigned long degree);
-	unsigned long nbBits(const mpz_class &v);
+	unsigned long get_noise(const mpz_class& c, const index_set &ix);
 	bool is_zero(const encoding &c);
-	mpz_class& get_x0() { return x0; };
 };
 
 #endif 

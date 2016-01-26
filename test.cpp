@@ -27,12 +27,13 @@ bool expect(const string& desc, bool expected, bool recieved) {
 
 int main()
 {
-	// PRNG
-    clt_state mmap(10, 1, 0, 1);
+    //clt_state(unsigned long secparam, unsigned long kappa, unsigned long nzs, int verbose = 0);
+    clt_state mmap(10, 10, 2, 1);
 
+    index_set ix = {0,1};
 
-    encoding x0 = mmap.encode((unsigned long)200);
-    encoding x1 = mmap.encode((unsigned long)200);
+    encoding x0 = mmap.encode((unsigned long)200, ix);
+    encoding x1 = mmap.encode((unsigned long)200, ix);
 
     // 2 - 2 ?= 0
 
