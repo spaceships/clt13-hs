@@ -25,20 +25,6 @@ inline mpz_class mod(const mpz_class &a, const mpz_class &b) {
     return res;
 }
 
-// Compute a mod b, -b/2 < a <= b/2
-inline mpz_class modNear(const mpz_class &a, const mpz_class &b) {
-    mpz_class res;
-    mpz_mod (res.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
-    if (res > (b >> 1)) 
-        res -= b;
-    return res;
-}
-
-// Compute nearest value of a/b
-inline mpz_class quotNear(const mpz_class &a, const mpz_class &b) {
-    return (a-modNear(a,b))/b;
-}
-
 /*}}}*/
 // index tools/*{{{*/
 
@@ -246,9 +232,9 @@ clt_state::clt_state
     }
     pzt=0;
 #pragma omp parallel for private(i, input)
-    for (i=0; i<n; i++) {
+    for (i = 0; i < n; i++) {
         mpz_invert(input.get_mpz_t(), g[i].get_mpz_t(), p[i].get_mpz_t());
-        input = mod(input*zkappa, p[i])*generateRandom(beta, rng)*(x0/p[i]); 
+        input = mod(input * zkappa, p[i]) * generateRandom(beta, rng) * (x0 / p[i]); 
 #pragma omp critical
         {
             pzt += input;
@@ -312,6 +298,15 @@ index_set clt_state::top_level_index() {
         ret.insert(i);
     }
     return ret;
+}
+
+// Compute a mod b, -b/2 < a <= b/2
+inline mpz_class modNear(const mpz_class &a, const mpz_class &b) {
+    mpz_class res;
+    mpz_mod (res.get_mpz_t(), a.get_mpz_t(), b.get_mpz_t());
+    if (res > (b >> 1)) 
+        res -= b;
+    return res;
 }
 
 bool clt_state::is_zero(const encoding &c) {
