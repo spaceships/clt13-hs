@@ -1,21 +1,15 @@
-{-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE BangPatterns #-}
 
 module CLT13.Util where
 
-import System.IO
-
 import Control.DeepSeq (deepseq)
-import Data.Word
-import qualified Data.Bits as B
+import Control.Monad.State.Strict
+import Control.Parallel.Strategies
+import Crypto.Random
+import Crypto.Util (bs2i)
 import Data.Bits ((.&.))
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
-import Control.Parallel.Strategies
-import Control.Monad
-import Crypto.Random
-import Crypto.Util (bs2i)
-import Control.Monad.State.Strict
 
 type Rng = SystemRandom
 type Rand = State Rng
