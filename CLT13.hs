@@ -4,11 +4,10 @@ module CLT13 where
 
 import CLT13.Util
 
-import Control.DeepSeq
-import Control.Concurrent.ParallelIO
 import Control.Monad
 import qualified Data.Set as S
 import qualified GHC.Integer.GMP.Internals as GMP
+import Control.Parallel.Strategies
 
 type IndexSet = S.Set Int
 
@@ -54,37 +53,36 @@ setup lambda_ kappa_ nzs_ = do
     print params
 
     putStrLn("generate the p_i's and x0")
-    ps <- par $ replicate n (randPrime eta)
+    ps <- randIO (randPrimes n eta)
     let x0 = sum ps
 
     putStrLn("generate the crt coeffs")
     let crt_coeffs = genCrtCoeffs ps x0
 
     putStrLn("generate the g_i's")
-    gs <- par $ replicate n (randPrime alpha)
+    gs <- randIO (randPrimes n alpha)
 
     putStrLn("generate the z_i's and zinvs")
-    (zs, zinvs) <- unzip <$> par (replicate nzs (randInvertible eta x0))
+    (zs, zinvs) <- unzip <$> randInvsIO nzs eta x0
 
-    putStrLn("generate zero-tester pzt")
-    pzt <- generateZeroTester beta zs gs ps x0
-    return $ MMap params ps gs zinvs crt_coeffs pzt
+    return $ MMap params ps gs zinvs crt_coeffs undefined
+
+    {-putStrLn("generate zero-tester pzt")-}
+    {-pzt <- generateZeroTester beta zs gs ps x0-}
+    {-return $ MMap params ps gs zinvs crt_coeffs pzt-}
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
-genCrtCoeffs ps x0 = map crt_coeff ps
+genCrtCoeffs ps x0 = map crt_coeff ps `using` rdeepseq
     where
         crt_coeff p = let q = x0 `div` p
                       in q * invMod q p
 
-generateZeroTester :: Int -> [Integer] -> [Integer] -> [Integer] -> Integer -> IO Integer
-generateZeroTester beta zs gs ps x0 = do
-        xs <- par $ flip map (zip gs ps) $ \(g, p) -> do
-            let ginv = invMod g p
-            h <- randInteger beta
-            return $ mulMod ginv zkappa p * h * (x0 `div` p)
-        return $ foldr (\x y -> addMod x y x0) 0 xs
-    where
-        zkappa = foldr (\x y -> mulMod x y x0) 1 zs
-
-par :: [IO a] -> IO [a]
-par = parallel . extraWorkerWhileBlocked
+{-generateZeroTester :: Int -> [Integer] -> [Integer] -> [Integer] -> Integer -> IO Integer-}
+{-generateZeroTester beta zs gs ps x0 = do-}
+        {-xs <- forM (zip gs ps) $ \(g, p) -> do-}
+            {-let ginv = invMod g p-}
+            {-h <- randInteger beta-}
+            {-return $ mulMod ginv zkappa p * h * (x0 `div` p)-}
+        {-return $ foldr (\x y -> addMod x y x0) 0 xs-}
+    {-where-}
+        {-zkappa = foldr (\x y -> mulMod x y x0) 1 zs-}

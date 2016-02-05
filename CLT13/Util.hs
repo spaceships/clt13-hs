@@ -2,38 +2,67 @@ module CLT13.Util where
 
 import System.IO
 
+import Control.Monad
 import Data.Word
 import qualified Data.Bits as B
 import Data.Bits ((.&.))
-import System.Entropy
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
+import Control.Parallel.Strategies
+import Crypto.Random
+import Crypto.Util (bs2i)
+import Control.Monad.State
 
-randInteger :: Int -> IO Integer
-randInteger nbits = do
-    let nbytes   = ceiling (fromIntegral nbits / 8)
-        overflow = nbits `mod` 8
-    (w:ws) <- BS.unpack <$> getEntropy nbytes
-    let w' = if overflow == 0 then w else w .&. (2 ^ (nbits `mod` 8) - 1)
-    return $ words2Integer (w':ws)
+type Rng = SystemRandom
+type Rand = State Rng
 
-words2Integer :: [Word8] -> Integer
-words2Integer ws = foldr (\(x, pow) z -> z + B.shift (fromIntegral x) pow) 0 (zip (reverse ws) [0,8..])
-
-randPrime :: Int -> IO Integer
-randPrime nbits = do
-    r <- randInteger nbits
-    return (GMP.nextPrimeInteger r)
-
-randInvertible :: Int -> Integer -> IO (Integer, Integer)
-randInvertible nbits modulus = loop
+randInteger_ :: Rng -> Int -> (Integer, Rng)
+randInteger_ gen nbits = either (error . show) (\(bs, g) -> (bs2i (truncate bs), g)) (genBytes nbytes gen)
     where
-        loop = do
-            r <- randInteger nbits
-            let rinv = invMod r modulus
-            if r >= modulus || rinv == 0
-                then putStrLn "loop" >> loop
-                else return (r, rinv)
+        overflow = nbits `mod` 8
+        nbytes   = ceiling (fromIntegral nbits / 8)
+
+        truncate :: BS.ByteString -> BS.ByteString
+        truncate bs = BS.cons w'' (BS.tail bs)
+            where
+                w   = BS.head bs
+                w'  = w .&. (2 ^ (nbits `mod` 8) - 1)
+                w'' = if overflow == 0 then w else w'
+
+runRand :: Rand a -> Rng -> (a, Rng)
+runRand = runState
+
+randIO :: Rand a -> IO a
+randIO m = do
+    gen <- newGenIO
+    let (x,_) = runRand m gen
+    return x
+
+randInteger :: Int -> Rand Integer
+randInteger nbits = do
+    rng <- get
+    let (x, rng') = randInteger_ rng nbits
+    put rng'
+    return x
+
+randPrimes :: Int -> Int -> Rand [Integer]
+randPrimes nprimes nbits = do
+    rs <- replicateM nprimes (randInteger nbits)
+    return (map GMP.nextPrimeInteger rs `using` rdeepseq)
+
+randInv :: Int -> Integer -> Rand (Integer, Integer)
+randInv nbits modulus = do
+    r <- randInteger nbits
+    let rinv = invMod r modulus
+    if r >= modulus || rinv == 0
+        then randInv nbits modulus
+        else return (r, rinv)
+
+randInvsIO :: Int -> Int -> Integer -> IO [(Integer, Integer)]
+randInvsIO ninvs nbits modulus = do
+    rngs <- replicateM ninvs newGenIO
+    let invs = fst <$> map (runRand (randInv nbits modulus)) rngs
+    return (invs `using` rdeepseq)
 
 sizeBase2 :: Integer -> Int
 sizeBase2 x = ceiling (logBase 2 (fromIntegral x))

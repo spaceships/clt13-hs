@@ -20,13 +20,12 @@ executable test
     build-depends:        base >=4.8 && <4.9
                         , containers
                         , bytestring
-                        , entropy
                         , integer-gmp
-                        , parallel-io
+                        , parallel
                         , mtl
-                        , ghc-prim
-                        , deepseq
-    ghc-options:        -threaded -with-rtsopts=-N
+                        , crypto-api
+    ghc-options:        -threaded -prof -fprof-auto "-with-rtsopts=-N -p"
+    --ghc-options:        -threaded "-with-rtsopts=-N"
 
 library
     exposed-modules:      CLT13
@@ -36,12 +35,10 @@ library
     build-depends:        base >=4.8 && <4.9
                         , containers
                         , bytestring
-                        , entropy
                         , integer-gmp
-                        , parallel-io
+                        , parallel
                         , mtl
-                        , ghc-prim
-                        , deepseq
+                        , crypto-api
     ghc-options:        -threaded -with-rtsopts=-N
     -- hs-source-dirs:
     default-language:    Haskell2010
