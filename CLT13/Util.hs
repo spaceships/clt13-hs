@@ -1,17 +1,21 @@
+{-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE BangPatterns #-}
+
 module CLT13.Util where
 
 import System.IO
 
-import Control.Monad
+import Control.DeepSeq (deepseq)
 import Data.Word
 import qualified Data.Bits as B
 import Data.Bits ((.&.))
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
 import Control.Parallel.Strategies
+import Control.Monad
 import Crypto.Random
 import Crypto.Util (bs2i)
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 type Rng = SystemRandom
 type Rand = State Rng
@@ -47,8 +51,9 @@ randInteger nbits = do
 
 randPrimes :: Int -> Int -> Rand [Integer]
 randPrimes nprimes nbits = do
-    rs <- replicateM nprimes (randInteger nbits)
-    return (map GMP.nextPrimeInteger rs `using` rdeepseq)
+    !rs <- replicateM nprimes (randInteger nbits)
+    let ps = pmap GMP.nextPrimeInteger rs
+    return ps
 
 randInv :: Int -> Integer -> Rand (Integer, Integer)
 randInv nbits modulus = do
@@ -61,8 +66,8 @@ randInv nbits modulus = do
 randInvsIO :: Int -> Int -> Integer -> IO [(Integer, Integer)]
 randInvsIO ninvs nbits modulus = do
     rngs <- replicateM ninvs newGenIO
-    let invs = fst <$> map (runRand (randInv nbits modulus)) rngs
-    return (invs `using` rdeepseq)
+    let invs = pmap fst (map (runRand (randInv nbits modulus)) rngs)
+    return invs
 
 sizeBase2 :: Integer -> Int
 sizeBase2 x = ceiling (logBase 2 (fromIntegral x))
@@ -75,3 +80,15 @@ mulMod x y z = x * y `mod` z
 
 addMod :: Integer -> Integer -> Integer -> Integer
 addMod x y z = x + y `mod` z
+
+sumMod :: [Integer] -> Integer -> Integer
+sumMod xs q = foldl (\x y -> addMod x y q) 0 xs
+
+prodMod :: [Integer] -> Integer -> Integer
+prodMod xs q = foldl (\x y -> mulMod x y q) 1 xs
+
+pmap :: NFData b => (a -> b) -> [a] -> [b]
+pmap = parMap rdeepseq
+
+forceM :: (Monad m, NFData a) => a -> m ()
+forceM x = x `deepseq` return ()

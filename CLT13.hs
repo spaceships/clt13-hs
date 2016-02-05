@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BangPatterns #-}
 
 module CLT13 where
 
@@ -32,7 +33,7 @@ data MMap = MMap { params     :: Params
                  , zinvs      :: [Integer]
                  , crt_coeffs :: [Integer]
                  , pzt        :: Integer
-                 }
+                 } deriving (Show)
 
 genParams :: Int -> Int -> Int -> Params
 genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho
@@ -52,37 +53,41 @@ setup lambda_ kappa_ nzs_ = do
         Params {..} = params
     print params
 
-    putStrLn("generate the p_i's and x0")
+    putStrLn("generate the p_i's")
     ps <- randIO (randPrimes n eta)
-    let x0 = sum ps
+    forceM ps
+    putStrLn("sum them to x0")
+    let !x0 = sum ps
 
     putStrLn("generate the crt coeffs")
     let crt_coeffs = genCrtCoeffs ps x0
+    forceM crt_coeffs
 
     putStrLn("generate the g_i's")
     gs <- randIO (randPrimes n alpha)
+    forceM gs
 
     putStrLn("generate the z_i's and zinvs")
     (zs, zinvs) <- unzip <$> randInvsIO nzs eta x0
+    forceM (zs, zinvs)
 
-    return $ MMap params ps gs zinvs crt_coeffs undefined
+    putStrLn("generate zero-tester pzt")
+    pzt <- randIO (genZeroTester n beta zs gs ps x0)
+    forceM pzt
 
-    {-putStrLn("generate zero-tester pzt")-}
-    {-pzt <- generateZeroTester beta zs gs ps x0-}
-    {-return $ MMap params ps gs zinvs crt_coeffs pzt-}
+    return $ MMap params ps gs zinvs crt_coeffs pzt
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
-genCrtCoeffs ps x0 = map crt_coeff ps `using` rdeepseq
+genCrtCoeffs ps x0 = pmap crt_coeff ps
     where
         crt_coeff p = let q = x0 `div` p
-                      in q * invMod q p
+                      in q * invMod q p `mod` x0
 
-{-generateZeroTester :: Int -> [Integer] -> [Integer] -> [Integer] -> Integer -> IO Integer-}
-{-generateZeroTester beta zs gs ps x0 = do-}
-        {-xs <- forM (zip gs ps) $ \(g, p) -> do-}
-            {-let ginv = invMod g p-}
-            {-h <- randInteger beta-}
-            {-return $ mulMod ginv zkappa p * h * (x0 `div` p)-}
-        {-return $ foldr (\x y -> addMod x y x0) 0 xs-}
-    {-where-}
-        {-zkappa = foldr (\x y -> mulMod x y x0) 1 zs-}
+genZeroTester :: Int -> Int -> [Integer] -> [Integer] -> [Integer] -> Integer -> Rand Integer
+genZeroTester n beta zs gs ps x0 = do
+        hs <- replicateM n (randInteger beta)
+        let xs = pmap forloop (zip3 gs ps hs)
+        return (sumMod xs x0)
+    where
+        zkappa = prodMod zs x0 -- TODO: add zpows
+        forloop (g, p, h) = (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0

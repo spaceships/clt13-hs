@@ -24,8 +24,10 @@ executable test
                         , parallel
                         , mtl
                         , crypto-api
-    ghc-options:        -threaded -prof -fprof-auto "-with-rtsopts=-N -p"
-    --ghc-options:        -threaded "-with-rtsopts=-N"
+                        , deepseq
+    --ghc-options:        -O2 -threaded -prof -fprof-auto "-with-rtsopts=-N4 -p -s"
+    ghc-options:        -O2 -threaded -prof -fprof-auto "-with-rtsopts=-N4 -p"
+    --ghc-options:        -O2 -threaded "-with-rtsopts=-N4"
 
 library
     exposed-modules:      CLT13
@@ -39,6 +41,7 @@ library
                         , parallel
                         , mtl
                         , crypto-api
+                        , deepseq
     ghc-options:        -threaded -with-rtsopts=-N
     -- hs-source-dirs:
     default-language:    Haskell2010
