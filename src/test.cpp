@@ -28,9 +28,9 @@ bool expect(const string& desc, bool expected, bool recieved) {
 int main()
 {
     bool ok;
-    unsigned long lambda      = 10;
-    unsigned long kappa       = 10;
-    unsigned long num_indices = 10;
+    unsigned long lambda      = 20;
+    unsigned long kappa       = 20;
+    unsigned long num_indices = 20;
     unsigned long verbose = 1;
     clt_state mmap(lambda, kappa, num_indices, verbose);
 
