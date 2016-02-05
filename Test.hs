@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Main where
 
@@ -13,9 +14,12 @@ main = do
         kappa  = 1
         nzs    = 10
     mmap <- setup lambda kappa nzs
+    let MMap   { x0, pzt, params } = mmap
+    let Params { nu }              = params
 
-    c0 <- randIO (encode [0] [0..nzs-1] mmap)
+    c0 <- randIO (encode [0,1,0,1] [0..nzs-1] mmap)
 
-    print (isZero c0 (pzt mmap) (x0 mmap) (nu (params mmap)))
+
+    print (isZero c0 pzt x0 nu)
 
     return ()

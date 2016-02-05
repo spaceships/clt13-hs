@@ -9,8 +9,6 @@ import Control.Monad
 import Data.List (zip4)
 import qualified Data.Set as S
 
-import Debug.Trace
-
 type Encoding = Integer
 
 encode :: [Integer] -> IndexSet -> MMap -> Rand Encoding
@@ -29,5 +27,6 @@ encode ms ix mmap
 isZero :: Encoding -> Integer -> Integer -> Int -> Bool
 isZero c pzt x0 nu = sizeBase2 x < sizeBase2 x0 - nu
     where
-        x = modNear (c * pzt) x0
-        modNear x q = if x > div q 2 then x - q else x
+        x = modNear (c*pzt) x0
+        modNear x q = let x' = x `mod` q
+                      in if x' > div q 2 then x'-q else x'

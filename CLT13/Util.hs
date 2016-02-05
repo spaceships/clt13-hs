@@ -14,8 +14,6 @@ import GHC.Types
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
 
-import Debug.Trace
-
 type Rng = SystemRandom
 type Rand = State Rng
 
@@ -70,8 +68,7 @@ randInvsIO ninvs nbits modulus = do
     return invs
 
 sizeBase2 :: Integer -> Int
-sizeBase2 x = let q = fromIntegral (W# (GMP.sizeInBaseInteger x 2#))
-              in traceShow q q
+sizeBase2 x = fromIntegral (W# (GMP.sizeInBaseInteger x 2#))
 
 invMod :: Integer -> Integer -> Integer
 invMod x q = GMP.recipModInteger x q
