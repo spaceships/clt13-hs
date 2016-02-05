@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash #-}
 
 module CLT13.Util where
 
@@ -8,8 +9,12 @@ import Control.Parallel.Strategies
 import Crypto.Random
 import Crypto.Util (bs2i)
 import Data.Bits ((.&.))
+import GHC.Prim
+import GHC.Types
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
+
+import Debug.Trace
 
 type Rng = SystemRandom
 type Rand = State Rng
@@ -53,7 +58,8 @@ randInv :: Int -> Integer -> Rand (Integer, Integer)
 randInv nbits modulus = do
     r <- randInteger nbits
     let rinv = invMod r modulus
-    if r >= modulus || rinv == 0
+        q    = r * rinv `mod` modulus
+    if r >= modulus || q /= 1
         then randInv nbits modulus
         else return (r, rinv)
 
@@ -64,7 +70,8 @@ randInvsIO ninvs nbits modulus = do
     return invs
 
 sizeBase2 :: Integer -> Int
-sizeBase2 x = ceiling (logBase 2 (fromIntegral x))
+sizeBase2 x = let q = fromIntegral (W# (GMP.sizeInBaseInteger x 2#))
+              in traceShow q q
 
 invMod :: Integer -> Integer -> Integer
 invMod x q = GMP.recipModInteger x q

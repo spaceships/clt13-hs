@@ -15,7 +15,7 @@ genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho
         beta  = lambda
         rho   = lambda
         rho_f = kappa * (rho + alpha + 2)
-        eta   = rho_f + alpha + 2 * beta + lambda + 8
+        eta   = rho_f + alpha + 2*beta + lambda + 8
         nu    = eta - beta - rho_f - lambda - 3
         n     = eta * floor (logBase 2 (fromIntegral lambda))
 
@@ -29,19 +29,22 @@ setup lambda_ kappa_ nzs_ = do
     putStrLn("generate the p_i's")
     ps <- randIO (randPrimes n eta)
     forceM ps
-    putStrLn("sum them to x0")
-    let !x0 = sum ps
 
-    putStrLn("generate the crt coeffs")
-    let crt_coeffs = genCrtCoeffs ps x0
-    forceM crt_coeffs
+    putStrLn("multiply them to x0")
+    let x0 = product ps
+    forceM x0
 
     putStrLn("generate the g_i's")
     gs <- randIO (randPrimes n alpha)
     forceM gs
 
+    putStrLn("generate the crt coeffs")
+    let crt_coeffs = genCrtCoeffs ps x0
+    forceM crt_coeffs
+
     putStrLn("generate the z_i's and zinvs")
-    (zs, zinvs) <- unzip <$> randInvsIO nzs eta x0
+    let x0size = sizeBase2 x0
+    (zs, zinvs) <- unzip <$> randInvsIO nzs x0size x0
     forceM (zs, zinvs)
 
     putStrLn("generate zero-tester pzt")
