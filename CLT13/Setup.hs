@@ -48,7 +48,7 @@ setup lambda_ kappa_ nzs_ = do
     pzt <- randIO (genZeroTester n beta zs gs ps x0)
     forceM pzt
 
-    return $ MMap params ps gs zinvs crt_coeffs pzt
+    return $ MMap params ps gs zinvs crt_coeffs pzt x0
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
 genCrtCoeffs ps x0 = pmap crt_coeff ps

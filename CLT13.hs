@@ -9,3 +9,4 @@ module CLT13
 import CLT13.Util
 import CLT13.Types
 import CLT13.Setup
+import CLT13.Encoding

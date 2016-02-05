@@ -4,10 +4,6 @@ import qualified Data.Set as S
 
 type IndexSet = S.Set Int
 
-data Encoding = Encoding { enc_index :: IndexSet
-                         , enc_value :: Integer
-                         }
-
 data Params = Params { lambda :: Int
                      , kappa  :: Int
                      , nzs    :: Int
@@ -25,5 +21,6 @@ data MMap = MMap { params     :: Params
                  , zinvs      :: [Integer]
                  , crt_coeffs :: [Integer]
                  , pzt        :: Integer
+                 , x0         :: Integer
                  } deriving (Show)
 
