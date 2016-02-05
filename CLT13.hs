@@ -4,36 +4,10 @@
 module CLT13 where
 
 import CLT13.Util
+import CLT13.Types
 
 import Control.Monad
-import qualified Data.Set as S
 import qualified GHC.Integer.GMP.Internals as GMP
-import Control.Parallel.Strategies
-
-type IndexSet = S.Set Int
-
-data Encoding = Encoding { enc_index :: IndexSet
-                         , enc_value :: Integer
-                         }
-
-data Params = Params { lambda :: Int
-                     , kappa  :: Int
-                     , nzs    :: Int
-                     , alpha  :: Int
-                     , beta   :: Int
-                     , eta    :: Int
-                     , n      :: Int
-                     , nu     :: Int
-                     , rho    :: Int
-                     } deriving (Show)
-
-data MMap = MMap { params     :: Params
-                 , ps         :: [Integer]
-                 , gs         :: [Integer]
-                 , zinvs      :: [Integer]
-                 , crt_coeffs :: [Integer]
-                 , pzt        :: Integer
-                 } deriving (Show)
 
 genParams :: Int -> Int -> Int -> Params
 genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho
