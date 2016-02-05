@@ -16,7 +16,7 @@ encode ms ix mmap
     | length ms < n = encode (ms ++ replicate (n - length ms) 0) ix mmap
     | otherwise     = do
         rs <- replicateM n (randInteger rho)
-        let cs = map (\(m, g, r, crt) -> (m + r*g) * crt) (zip4 ms gs rs crt_coeffs)
+        let cs = map (\(m, g, r, crt) -> (mod m g + r * g) * crt) (zip4 ms gs rs crt_coeffs)
             c  = sum cs
             zs = map (zinvs !!) (S.toList ix)
         return (foldl (\x y -> x * y `mod` x0) c zs)

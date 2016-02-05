@@ -9,17 +9,76 @@ import CLT13.Util
 import CLT13.Types
 import CLT13.Encoding
 
+import Text.Printf
+
 main = do
     let lambda = 30
-        kappa  = 1
+        kappa  = 2
         nzs    = 10
     mmap <- setup lambda kappa nzs
     let MMap   { x0, pzt, params } = mmap
     let Params { nu }              = params
 
-    c0 <- randIO (encode [0,1,0,1] [0..nzs-1] mmap)
+    x <- randIO (randInteger (alpha params))
+    putStrLn ("x = " ++ show x)
 
+    c0 <- randIO (encode [0] [0..nzs-1] mmap)
+    c1 <- randIO (encode [0] [0..nzs-1] mmap)
+    let c2 = c0 + c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(0 + 0)" r True
 
-    print (isZero c0 pzt x0 nu)
+    c0 <- randIO (encode [0] [0..nzs-1] mmap)
+    c1 <- randIO (encode [1] [0..nzs-1] mmap)
+    let c2 = c0 + c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(0 + 1)" r False
+
+    c0 <- randIO (encode [0] [0..nzs-1] mmap)
+    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    let c2 = c0 + c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(0 + x)" r False
+
+    c0 <- randIO (encode [x] [0..nzs-1] mmap)
+    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    let c2 = c0 - c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(x - x)" r True
+
+    c0 <- randIO (encode [0] [0..nzs-1] mmap)
+    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    let c2 = c0 - c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(0 - x)" r False
+
+    c0 <- randIO (encode [1] [0..nzs-1] mmap)
+    c1 <- randIO (encode [0] [0..nzs-1] mmap)
+    let c2 = c0 - c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(1 - 0)" r False
+
+    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
+    c1 <- randIO (encode [0] [div nzs 2..nzs-1] mmap)
+    let c2 = c0 * c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(x * 0)" r True
+
+    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
+    c1 <- randIO (encode [1] [div nzs 2..nzs-1] mmap)
+    let c2 = c0 * c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(x * 1)" r False
+
+    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
+    c1 <- randIO (encode [x] [div nzs 2..nzs-1] mmap)
+    let c2 = c0 * c1 `mod` x0
+        r  = isZero c2 pzt x0 nu
+    expect "isZero(x * x)" r False
 
     return ()
+
+expect :: (Show a, Eq a) => String -> a -> a -> IO ()
+expect string got expected
+    | got == expected = putStrLn (string ++ " = " ++ show got)
+    | otherwise       = putStrLn ("\x1b[1;41m" ++ string ++ " = " ++ show got ++ "\x1b[0m")
