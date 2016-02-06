@@ -1,5 +1,6 @@
 #include <iostream>
 #include "clt_mlm.h"
+#include "utils.h"
 
 using namespace std;
 typedef unsigned long ulong;
@@ -21,7 +22,7 @@ int main()
     srand(time(NULL));
 
     ulong nzs     = 10;
-    ulong lambda  = 30;
+    ulong lambda  = 40;
     ulong kappa   = 2;
     ulong verbose = true;
 
@@ -62,7 +63,11 @@ int main()
     }
     mpz_t x0, x1, xp;
     mpz_inits(x0, x1, xp, NULL);
+    double start, end;
+    start = current_time();
     clt_mlm_encode(&mmap, x0, 1, zero, nzs, ix, pows);
+    end = current_time();
+    printf("encoding took %fs\n", end - start);
     clt_mlm_encode(&mmap, x1, 1, zero, nzs, ix, pows);
     mpz_add(xp, x0, x1);
     mpz_mod(xp, xp, mmap.q);

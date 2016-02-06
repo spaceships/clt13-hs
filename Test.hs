@@ -10,9 +10,11 @@ import CLT13.Types
 import CLT13.Encoding
 
 import Text.Printf
+import System.CPUTime
+import Control.Parallel.Strategies
 
 main = do
-    let lambda = 30
+    let lambda = 40
         kappa  = 2
         nzs    = 10
     mmap <- setup lambda kappa nzs
@@ -22,8 +24,8 @@ main = do
     x <- randIO (randInteger (alpha params))
     putStrLn ("x = " ++ show x)
 
-    c0 <- randIO (encode [0] [0..nzs-1] mmap)
-    c1 <- randIO (encode [0] [0..nzs-1] mmap)
+    c0 <- time $ randIO (encode [0] [0..nzs-1] mmap)
+    c1 <- time $ randIO (encode [0] [0..nzs-1] mmap)
     let c2 = c0 + c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(0 + 0)" r True
@@ -77,6 +79,16 @@ main = do
     expect "isZero(x * x)" r False
 
     return ()
+
+time :: NFData a => IO a -> IO a
+time a = do
+    start <- getCPUTime
+    v <- a
+    forceM v
+    end <- getCPUTime
+    let diff = (fromIntegral (end - start)) / (10^12)
+    printf "Computation time: %0.3f sec\n" (diff :: Double)
+    return v
 
 expect :: (Show a, Eq a) => String -> a -> a -> IO ()
 expect string got expected
