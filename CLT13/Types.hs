@@ -1,8 +1,9 @@
 module CLT13.Types where
 
-import qualified Data.Set as S
+import qualified Data.Map as M
 
-type IndexSet = S.Set Int
+type Power    = Int
+type IndexSet = M.Map Int Power
 
 data Params = Params { lambda :: Int
                      , kappa  :: Int

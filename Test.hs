@@ -12,68 +12,74 @@ import CLT13.Encoding
 import Text.Printf
 import System.CPUTime
 import Control.Parallel.Strategies
+import qualified Data.Map as M
 
 main = do
-    let lambda = 40
-        kappa  = 2
-        nzs    = 10
-    mmap <- setup lambda kappa nzs
+    let lambda   = 40
+        kappa    = 2
+        nzs      = 10
+        topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]
+
+    mmap <- setup lambda kappa nzs topLevel
     let MMap   { x0, pzt, params } = mmap
     let Params { nu }              = params
 
     x <- randIO (randInteger (alpha params))
     putStrLn ("x = " ++ show x)
 
-    c0 <- time $ randIO (encode [0] [0..nzs-1] mmap)
-    c1 <- time $ randIO (encode [0] [0..nzs-1] mmap)
+    c0 <- time $ randIO (encode [0] topLevel mmap)
+    c1 <- time $ randIO (encode [0] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(0 + 0)" r True
 
-    c0 <- randIO (encode [0] [0..nzs-1] mmap)
-    c1 <- randIO (encode [1] [0..nzs-1] mmap)
+    c0 <- randIO (encode [0] topLevel mmap)
+    c1 <- randIO (encode [1] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(0 + 1)" r False
 
-    c0 <- randIO (encode [0] [0..nzs-1] mmap)
-    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    c0 <- randIO (encode [0] topLevel mmap)
+    c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(0 + x)" r False
 
-    c0 <- randIO (encode [x] [0..nzs-1] mmap)
-    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    c0 <- randIO (encode [x] topLevel mmap)
+    c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(x - x)" r True
 
-    c0 <- randIO (encode [0] [0..nzs-1] mmap)
-    c1 <- randIO (encode [x] [0..nzs-1] mmap)
+    c0 <- randIO (encode [0] topLevel mmap)
+    c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(0 - x)" r False
 
-    c0 <- randIO (encode [1] [0..nzs-1] mmap)
-    c1 <- randIO (encode [0] [0..nzs-1] mmap)
+    c0 <- randIO (encode [1] topLevel mmap)
+    c1 <- randIO (encode [0] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(1 - 0)" r False
 
-    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
-    c1 <- randIO (encode [0] [div nzs 2..nzs-1] mmap)
+    let firstHalf  = M.fromList [ (i,1) | i <- [0..div nzs 2 - 1] ] :: IndexSet
+        secondHalf = M.fromList [ (i,1) | i <- [div nzs 2..nzs-1] ] :: IndexSet
+
+    c0 <- randIO (encode [x] firstHalf  mmap)
+    c1 <- randIO (encode [0] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(x * 0)" r True
 
-    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
-    c1 <- randIO (encode [1] [div nzs 2..nzs-1] mmap)
+    c0 <- randIO (encode [x] firstHalf  mmap)
+    c1 <- randIO (encode [1] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(x * 1)" r False
 
-    c0 <- randIO (encode [x] [0..div nzs 2 - 1] mmap)
-    c1 <- randIO (encode [x] [div nzs 2..nzs-1] mmap)
+    c0 <- randIO (encode [x] firstHalf  mmap)
+    c1 <- randIO (encode [x] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
         r  = isZero c2 pzt x0 nu
     expect "isZero(x * x)" r False
