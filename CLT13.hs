@@ -4,6 +4,8 @@ module CLT13
   , Encoding
   , IndexSet
   , setup
+  , encode
+  , isZero
   ) where
 
 import CLT13.Util
