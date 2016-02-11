@@ -8,7 +8,8 @@ module CLT13
   , isZero
   ) where
 
-import CLT13.Util
-import CLT13.Types
-import CLT13.Setup
 import CLT13.Encoding
+import CLT13.Rand
+import CLT13.Setup
+import CLT13.Types
+import CLT13.Util

@@ -5,9 +5,10 @@
 module Main where
 
 import CLT13
-import CLT13.Util
-import CLT13.Types
 import CLT13.Encoding
+import CLT13.Rand
+import CLT13.Types
+import CLT13.Util
 
 import Text.Printf
 import System.CPUTime

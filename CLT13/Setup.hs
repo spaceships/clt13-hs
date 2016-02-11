@@ -5,6 +5,7 @@ module CLT13.Setup where
 
 import CLT13.Types
 import CLT13.Util
+import CLT13.Rand
 
 import Control.Monad
 import qualified Data.Map as M
@@ -44,8 +45,7 @@ setup lambda_ kappa_ nzs_ topLevelIndex = do
     forceM crt_coeffs
 
     putStrLn("generate the z_i's and zinvs")
-    let x0size = sizeBase2 x0
-    (zs, zinvs) <- unzip <$> randInvsIO nzs x0size x0
+    (zs, zinvs) <- unzip <$> randInvsIO nzs x0
     forceM (zs, zinvs)
 
     putStrLn("generate zero-tester pzt")

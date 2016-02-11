@@ -2,6 +2,7 @@
 
 module CLT13.Encoding where
 
+import CLT13.Rand
 import CLT13.Types
 import CLT13.Util
 
