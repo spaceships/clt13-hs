@@ -45,7 +45,7 @@ setup lambda_ kappa_ nzs_ topLevelIndex = do
     forceM crt_coeffs
 
     putStrLn("generate the z_i's and zinvs")
-    (zs, zinvs) <- unzip <$> randInvsIO nzs x0
+    (zs, zinvs) <- unzip <$> randIO (randInvs nzs x0)
     forceM (zs, zinvs)
 
     putStrLn("generate zero-tester pzt")
