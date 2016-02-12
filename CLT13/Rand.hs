@@ -61,8 +61,7 @@ randIntegerMod q = do
 
 randPrimes :: Int -> Int -> Rand [Integer]
 randPrimes nprimes nbits = do
-    rngs <- split nprimes
-    {-!rs <- replicateM nprimes (randInteger nbits)-}
+    rngs <- splitRand nprimes
     let rs = pmap (fst . flip randInteger_ nbits) rngs
         ps = pmap GMP.nextPrimeInteger rs
     return ps
@@ -80,17 +79,17 @@ randInv q = try 100
 
 randInvs :: Int -> Integer -> Rand [(Integer, Integer)]
 randInvs ninvs modulus = do
-    rngs <- split ninvs
+    rngs <- splitRand ninvs
     let invs = pmap fst (map (runRand (randInv modulus)) rngs)
     return invs
 
-split :: Int -> Rand [Rng]
-split 0 = return []
-split n = do
+splitRand :: Int -> Rand [Rng]
+splitRand 0 = return []
+splitRand n = do
     gen <- get
     case splitGen gen of
         Left err      -> error ("[splitGen] " ++ show err)
         Right (g0,g1) -> do
             put g0
-            rest <- split (n-1)
+            rest <- splitRand (n-1)
             return (g1:rest)

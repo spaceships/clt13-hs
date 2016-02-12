@@ -1,14 +1,34 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
 
-module CLT13.Setup where
+module CLT13.MMap where
 
-import CLT13.Types
-import CLT13.Util
+import CLT13.IndexSet
 import CLT13.Rand
+import CLT13.Util
 
 import Control.Monad
 import qualified Data.Map as M
+
+data Params = Params { lambda :: Int
+                     , kappa  :: Int
+                     , nzs    :: Int
+                     , alpha  :: Int
+                     , beta   :: Int
+                     , eta    :: Int
+                     , n      :: Int
+                     , nu     :: Int
+                     , rho    :: Int
+                     } deriving (Show)
+
+data MMap = MMap { params     :: Params
+                 , ps         :: [Integer]
+                 , gs         :: [Integer]
+                 , zinvs      :: [Integer]
+                 , crt_coeffs :: [Integer]
+                 , pzt        :: Integer
+                 , x0         :: Integer
+                 } deriving (Show)
 
 genParams :: Int -> Int -> Int -> Params
 genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho

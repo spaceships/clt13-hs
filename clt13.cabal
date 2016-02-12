@@ -13,7 +13,12 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-    exposed-modules:      CLT13, CLT13.Rand, CLT13.Util, CLT13.Types, CLT13.Setup
+    exposed-modules:      CLT13
+                        , CLT13.IndexSet
+                        , CLT13.MMap
+                        , CLT13.Rand
+                        , CLT13.Util
+
     build-depends:        base >=4.8 && <4.9
                         , containers
                         , bytestring

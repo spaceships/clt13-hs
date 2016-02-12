@@ -2,8 +2,9 @@
 
 module CLT13.Encoding where
 
+import CLT13.IndexSet
+import CLT13.MMap
 import CLT13.Rand
-import CLT13.Types
 import CLT13.Util
 
 import Control.Monad
