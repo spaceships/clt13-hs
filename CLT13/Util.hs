@@ -29,5 +29,8 @@ prodMod xs q = foldl (\x y -> mulMod x y q) 1 xs
 pmap :: NFData b => (a -> b) -> [a] -> [b]
 pmap = parMap rdeepseq
 
+plist :: NFData n => [n] -> [n]
+plist = withStrategy (parList rdeepseq)
+
 forceM :: (Monad m, NFData a) => a -> m ()
 forceM x = x `deepseq` return ()

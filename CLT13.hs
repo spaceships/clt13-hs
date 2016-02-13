@@ -1,7 +1,7 @@
 module CLT13
   ( MMap (..)
   , Params (..)
-  , Encoding
+  , Encoding (..)
   , IndexSet
   , setup
   , encode

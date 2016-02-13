@@ -16,6 +16,7 @@ library
     exposed-modules:      CLT13
                         , CLT13.IndexSet
                         , CLT13.MMap
+                        , CLT13.Encoding
                         , CLT13.Rand
                         , CLT13.Util
 
@@ -27,8 +28,10 @@ library
                         , mtl
                         , crypto-api
                         , DRBG
-                        , deepseq
                         , ghc-prim
+                        , deepseq
+                        , parallel
+                        , monad-parallel
 
     ghc-options:        -threaded -with-rtsopts=-N4
     default-language:    Haskell2010
@@ -44,6 +47,8 @@ executable clt13-tests
                         , mtl
                         , crypto-api
                         , DRBG
-                        , deepseq
                         , ghc-prim
+                        , deepseq
+                        , parallel
+                        , monad-parallel
     ghc-options:        -O2 -threaded -fprof-auto "-with-rtsopts=-N4 -p"

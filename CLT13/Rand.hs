@@ -1,5 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DoAndIfThenElse #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module CLT13.Rand where
 
@@ -9,8 +11,9 @@ import Crypto.Random
 import Crypto.Random.DRBG
 import Crypto.Util (bs2i)
 
-import Control.Arrow (first)
 import Control.Monad.State.Strict
+import Control.Monad.Parallel
+import Control.Parallel
 import Data.Bits ((.&.))
 import qualified Data.ByteString as BS
 import qualified GHC.Integer.GMP.Internals as GMP
@@ -18,11 +21,17 @@ import qualified GHC.Integer.GMP.Internals as GMP
 type Rng  = CtrDRBG
 type Rand = State Rng
 
+instance MonadParallel Rand where
+    bindM2 f a b = do
+        [r1, r2] <- splitRand 2
+        let (x,_) = runRand a r1
+            (y,_) = x `par` runRand b r2
+        f x y
+
 randInteger_ :: Rng -> Int -> (Integer, Rng)
 randInteger_ gen nbits = case genBytes nbytes gen of
-    Left err -> error ("[randInteger_] " ++ show err)
-    Right t  -> first (bs2i . truncate) t
-
+    Left err    -> error ("[randInteger_] " ++ show err)
+    Right (t,g) -> let i = bs2i (truncate t) in (i,g)
   where
     overflow = nbits `mod` 8
     nbytes   = ceiling (fromIntegral nbits / 8)
@@ -36,6 +45,9 @@ randInteger_ gen nbits = case genBytes nbytes gen of
 
 runRand :: Rand a -> Rng -> (a, Rng)
 runRand = runState
+
+evalRand :: Rand a -> Rng -> a
+evalRand = evalState
 
 randIO :: Rand a -> IO a
 randIO m = do
@@ -54,7 +66,7 @@ randIntegerMod :: Integer -> Rand Integer
 randIntegerMod q = do
     let nbits = sizeBase2 q
     x <- randInteger nbits
-    if x >= q then
+    if x <= 0 || x >= q then
         randIntegerMod q
     else
         return x
@@ -62,8 +74,7 @@ randIntegerMod q = do
 randPrimes :: Int -> Int -> Rand [Integer]
 randPrimes nprimes nbits = do
     rngs <- splitRand nprimes
-    let rs = pmap (fst . flip randInteger_ nbits) rngs
-        ps = pmap GMP.nextPrimeInteger rs
+    let ps = pmap (GMP.nextPrimeInteger . fst . flip randInteger_ nbits) rngs
     return ps
 
 randInv :: Integer -> Rand (Integer, Integer)
@@ -73,7 +84,7 @@ randInv q = try 100
     try n = do
         x <- randIntegerMod q
         let xinv = invMod x q
-        if xinv == 0
+        if x == 0 || xinv == 0
             then try (n-1)
             else return (x, xinv)
 
