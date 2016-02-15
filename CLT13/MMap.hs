@@ -41,34 +41,34 @@ genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho
         nu    = eta - beta - rho_f - lambda - 3
         n     = eta * floor (logBase 2 (fromIntegral lambda))
 
-setup :: Int -> Int -> Int -> IndexSet -> IO MMap
-setup lambda_ kappa_ nzs_ topLevelIndex = do
-    putStrLn("generate the mmap parameters")
+setup :: Bool -> Int -> Int -> Int -> IndexSet -> IO MMap
+setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
+    when verbose $ putStrLn "generate the mmap parameters"
     let params = genParams lambda_ kappa_ nzs_
         Params {..} = params
-    print params
+    when verbose $ print params
 
-    putStrLn("generate the p_i's")
+    when verbose $ putStrLn "generate the p_i's"
     ps <- randIO (randPrimes n eta)
     forceM ps
 
-    putStrLn("multiply them to x0")
+    when verbose $ putStrLn "multiply them to x0"
     let x0 = product ps
     forceM x0
 
-    putStrLn("generate the g_i's")
+    when verbose $ putStrLn "generate the g_i's"
     gs <- randIO (randPrimes n alpha)
     forceM gs
 
-    putStrLn("generate the crt coeffs")
+    when verbose $ putStrLn "generate the crt coeffs"
     let crt_coeffs = genCrtCoeffs ps x0
     forceM crt_coeffs
 
-    putStrLn("generate the z_i's and zinvs")
+    when verbose $ putStrLn "generate the z_i's and zinvs"
     (zs, zinvs) <- unzip <$> randIO (randInvs nzs x0)
     forceM (zs, zinvs)
 
-    putStrLn("generate zero-tester pzt")
+    when verbose $ putStrLn "generate zero-tester pzt"
     pzt <- randIO (genZeroTester n beta zs topLevelIndex gs ps x0)
     forceM pzt
 
