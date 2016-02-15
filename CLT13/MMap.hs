@@ -8,38 +8,49 @@ import CLT13.Rand
 import CLT13.Util
 
 import Control.Monad
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
-data Params = Params { lambda :: Int
-                     , kappa  :: Int
-                     , nzs    :: Int
-                     , alpha  :: Int
-                     , beta   :: Int
-                     , eta    :: Int
-                     , n      :: Int
-                     , nu     :: Int
-                     , rho    :: Int
-                     } deriving (Show)
+data Params = Params {
+    lambda :: Int,
+    kappa  :: Int,
+    nzs    :: Int,
+    alpha  :: Int,
+    beta   :: Int,
+    eta    :: Int,
+    n      :: Int,
+    nu     :: Int,
+    rho    :: Int
+} deriving (Show)
 
-data MMap = MMap { params     :: Params
-                 , ps         :: [Integer]
-                 , gs         :: [Integer]
-                 , zinvs      :: [Integer]
-                 , crt_coeffs :: [Integer]
-                 , pzt        :: Integer
-                 , x0         :: Integer
-                 } deriving (Show)
+data MMap = MMap {
+    params     :: Params,
+    ps         :: [Integer],
+    gs         :: [Integer],
+    zinvs      :: [Integer],
+    crt_coeffs :: [Integer],
+    pzt        :: Integer,
+    x0         :: Integer
+} deriving (Show)
+
+data PublicParams = PublicParams {
+    modulus    :: Integer,
+    zeroTester :: Integer,
+    threshold  :: Int
+}
+
+publicParams :: MMap -> PublicParams
+publicParams mmap = PublicParams (x0 mmap) (pzt mmap) (nu (params mmap))
 
 genParams :: Int -> Int -> Int -> Params
-genParams lambda kappa nzs = Params lambda kappa nzs alpha beta eta n nu rho
-    where
-        alpha = lambda
-        beta  = lambda
-        rho   = lambda
-        rho_f = kappa * (rho + alpha + 2)
-        eta   = rho_f + alpha + 2*beta + lambda + 8
-        nu    = eta - beta - rho_f - lambda - 3
-        n     = eta * floor (logBase 2 (fromIntegral lambda))
+genParams λ κ nzs = Params λ κ nzs α β η n nu ρ
+  where
+    α   = λ
+    β   = λ
+    ρ   = λ
+    ρ_f = κ * (ρ + α + 2)
+    η   = ρ_f + α + 2*β + λ + 8
+    nu  = η - β - ρ_f - λ - 3
+    n   = η * floor (logBase 2 (fromIntegral λ))
 
 setup :: Bool -> Int -> Int -> Int -> IndexSet -> IO MMap
 setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
@@ -76,24 +87,34 @@ setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
 genCrtCoeffs ps x0 = pmap crt_coeff ps
-    where
-        crt_coeff p = let q = x0 `div` p
-                      in q * invMod q p `mod` x0
+  where
+    crt_coeff p =
+        let q = x0 `div` p
+        in q * invMod q p `mod` x0
 
-genZeroTester :: Int -> Int -> [Integer] -> IndexSet -> [Integer] -> [Integer] -> Integer -> Rand Integer
+genZeroTester
+  :: Int
+  -> Int
+  -> [Integer]
+  -> IndexSet
+  -> [Integer]
+  -> [Integer]
+  -> Integer
+  -> Rand Integer
 genZeroTester n beta zs pows gs ps x0 = do
-        hs <- replicateM n (randInteger beta)
-        let xs = pmap forloop (zip3 gs ps hs)
-        return (sumMod xs x0)
-    where
-        zkappa = prodMod (getPows zs pows) x0
-        forloop (g, p, h) = (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0
+    hs <- replicateM n (randInteger beta)
+    let xs = pmap forloop (zip3 gs ps hs)
+    return (sumMod xs x0)
+  where
+    zkappa = prodMod (getPows zs pows) x0
+    forloop (g, p, h) =
+        (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0
 
-        getPows :: [Integer] -> IndexSet -> [Integer]
-        getPows zs pows = getPows' (zip [0..] zs) pows
+    getPows :: [Integer] -> IndexSet -> [Integer]
+    getPows zs pows = getPows' (zip [0..] zs) pows
 
-        getPows' :: [(Int, Integer)] -> IndexSet -> [Integer]
-        getPows' [] _ = []
-        getPows' ((i,z):zs) pows = case M.lookup i pows of
-            Nothing  -> getPows' zs pows
-            Just pow -> z ^ pow : getPows' zs pows
+    getPows' :: [(Int, Integer)] -> IndexSet -> [Integer]
+    getPows' [] _ = []
+    getPows' ((i,z):zs) pows = case M.lookup i pows of
+        Nothing  -> getPows' zs pows
+        Just pow -> z ^ pow : getPows' zs pows

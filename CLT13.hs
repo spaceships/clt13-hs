@@ -2,6 +2,8 @@ module CLT13
   ( MMap (..)
   , Params (..)
   , Encoding (..)
+  , PublicParams (..)
+  , publicParams
   , IndexSet
   , setup
   , encode
