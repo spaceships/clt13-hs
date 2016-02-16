@@ -26,9 +26,9 @@ encode ms ix mmap
         MMap   {..} = mmap
         Params {..} = params
 
-isZero :: Encoding -> Integer -> Integer -> Int -> Bool
-isZero c pzt x0 nu = sizeBase2 x < sizeBase2 x0 - nu
+isZero :: PublicParams -> Encoding -> Bool
+isZero (PublicParams {..}) c = sizeBase2 x < sizeBase2 modulus - threshold
     where
-        x = modNear (c*pzt) x0
-        modNear x q = let x' = x `mod` q
-                      in if x' > div q 2 then x'-q else x'
+        x = modNear (c * zeroTester) modulus
+        modNear x q = let x' = x `mod` modulus
+                      in if x' > div modulus 2 then x' - modulus else x'

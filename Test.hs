@@ -24,8 +24,8 @@ main = do
         {-topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]-}
 
     mmap <- setup True lambda kappa nzs topLevel
-    let MMap   { x0, pzt, params } = mmap
-    let Params { nu }              = params
+    let pp = publicParams mmap
+    let MMap { x0, params } = mmap
 
     x <- randIO (randInteger lambda)
     putStrLn ("x = " ++ show x)
@@ -33,37 +33,37 @@ main = do
     c0 <- time $ randIO (encode [0] topLevel mmap)
     c1 <- time $ randIO (encode [0] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(0 + 0)" r True
 
     c0 <- randIO (encode [0] topLevel mmap)
     c1 <- randIO (encode [1] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(0 + 1)" r False
 
     c0 <- randIO (encode [0] topLevel mmap)
     c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 + c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(0 + x)" r False
 
     c0 <- randIO (encode [x] topLevel mmap)
     c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(x - x)" r True
 
     c0 <- randIO (encode [0] topLevel mmap)
     c1 <- randIO (encode [x] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(0 - x)" r False
 
     c0 <- randIO (encode [1] topLevel mmap)
     c1 <- randIO (encode [0] topLevel mmap)
     let c2 = c0 - c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(1 - 0)" r False
 
     let firstHalf  = M.fromList [ (i,1) | i <- [0..div nzs 2 - 1] ] :: IndexSet
@@ -72,19 +72,19 @@ main = do
     c0 <- randIO (encode [x] firstHalf  mmap)
     c1 <- randIO (encode [0] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(x * 0)" r True
 
     c0 <- randIO (encode [x] firstHalf  mmap)
     c1 <- randIO (encode [1] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(x * 1)" r False
 
     c0 <- randIO (encode [x] firstHalf  mmap)
     c1 <- randIO (encode [x] secondHalf mmap)
     let c2 = c0 * c1 `mod` x0
-        r  = isZero c2 pzt x0 nu
+        r  = isZero pp c2
     expect "isZero(x * x)" r False
 
     -- zimmerman-like tests
@@ -96,7 +96,7 @@ main = do
     c  <- randIO (encode [0,y2] topLevel   mmap)
     let c2 = c0 * c1 `mod` x0
         c3 = c2 - c  `mod` x0
-        r  = isZero c3 pzt x0 nu
+        r  = isZero pp c3
     expect "[Z] isZero(x * 0)" r True
 
     y0 <- randIO (randInteger lambda)
@@ -108,7 +108,7 @@ main = do
     c  <- randIO (encode [0 ,y2] topLevel   mmap)
     let c2 = c0 * c1 `mod` x0
         c3 = c2 - c  `mod` x0
-        r  = isZero c3 pzt x0 nu
+        r  = isZero pp c3
     expect "[Z] isZero(x * y)" r False
 
     return ()

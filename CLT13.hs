@@ -5,6 +5,11 @@ module CLT13
   , PublicParams (..)
   , publicParams
   , IndexSet
+  , Index
+  , indexUnion
+  , indexUnions
+  , pow
+  , pow1
   , setup
   , encode
   , isZero
