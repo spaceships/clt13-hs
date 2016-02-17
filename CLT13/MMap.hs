@@ -108,8 +108,6 @@ genZeroTester n beta zs pows gs ps x0 = do
     return (sumMod xs x0)
   where
     zkappa = prodMod (getPows zs pows) x0
-    forloop (g, p, h) =
-        (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0
 
     getPows :: [Integer] -> IndexSet -> [Integer]
     getPows zs pows = getPows' (zip [0..] zs) pows
@@ -119,3 +117,6 @@ genZeroTester n beta zs pows gs ps x0 = do
     getPows' ((i,z):zs) pows = case M.lookup i pows of
         Nothing  -> getPows' zs pows
         Just pow -> z ^ pow : getPows' zs pows
+
+    forloop (g, p, h) =
+        (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0
