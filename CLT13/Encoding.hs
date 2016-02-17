@@ -17,6 +17,8 @@ import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 import qualified Data.Map as M
 
+import Debug.Trace
+
 data Encoding = Encoding {
     ix  :: IndexSet,
     val :: Integer

@@ -116,7 +116,7 @@ genZeroTester n beta zs pows gs ps x0 = do
     getPows' [] _ = []
     getPows' ((i,z):zs) pows = case M.lookup i pows of
         Nothing  -> getPows' zs pows
-        Just pow -> z ^ pow : getPows' zs pows
+        Just pow -> (z^pow `mod` x0) : getPows' zs pows
 
     forloop (g, p, h) =
-        (invMod g p * zkappa `mod` p) * h * (x0 `div` p) `mod` x0
+        (invMod g p * zkappa `mod` p) * h * (x0 `div` p)

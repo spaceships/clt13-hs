@@ -111,6 +111,24 @@ main = do
         r  = isZero pp c3
     expect "[Z] isZero(x * y)" r False
 
+    α  <- randIO (randInteger lambda)
+    β  <- randIO (randInteger lambda)
+    c0 <- randIO (encode [α ,β] topLevel  mmap)
+    c1 <- randIO (encode [α ,β] topLevel  mmap)
+    let c2 = sub pp c0 c1
+        r  = isZero pp c2
+    expect "[Z] isZero(x - x)" r True
+
+    α  <- randIO (randInteger lambda)
+    β  <- randIO (randInteger lambda)
+    c0 <- randIO (encode [α ,β] topLevel  mmap)
+    c1 <- randIO (encode [0 ,β] topLevel  mmap)
+    c2 <- randIO (encode [α ,0] topLevel  mmap)
+    let c3 = sub pp c0 c1
+        c4 = sub pp c3 c2
+        r  = isZero pp c4
+    expect "[Z] isZero([a,b] - [0,b] - [a,0])" r True
+
     return ()
 
 time :: NFData a => IO a -> IO a
