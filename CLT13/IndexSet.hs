@@ -2,6 +2,7 @@
 
 module CLT13.IndexSet where
 
+import Control.Parallel.Strategies (NFData)
 import qualified Data.Map.Strict as M
 
 type Power    = Int

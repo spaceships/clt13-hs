@@ -29,7 +29,8 @@ data MMap = MMap {
     zinvs      :: [Integer],
     crt_coeffs :: [Integer],
     pzt        :: Integer,
-    x0         :: Integer
+    x0         :: Integer,
+    topLevel   :: IndexSet
 } deriving (Show)
 
 data PublicParams = PublicParams {
@@ -83,7 +84,7 @@ setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
     pzt <- randIO (genZeroTester n beta zs topLevelIndex gs ps x0)
     forceM pzt
 
-    return $ MMap params ps gs zinvs crt_coeffs pzt x0
+    return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
 genCrtCoeffs ps x0 = pmap crt_coeff ps

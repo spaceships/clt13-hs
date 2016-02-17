@@ -13,6 +13,9 @@ module CLT13
   , setup
   , encode
   , isZero
+  , add
+  , sub
+  , mul
   ) where
 
 import CLT13.Encoding
