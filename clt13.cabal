@@ -21,17 +21,17 @@ library
                         , CLT13.Util
 
     build-depends:        base >=4.8 && <4.9
-                        , containers
-                        , bytestring
-                        , integer-gmp
-                        , parallel
-                        , mtl
-                        , crypto-api
                         , DRBG
-                        , ghc-prim
+                        , bytestring
+                        , cereal
+                        , containers
+                        , crypto-api
                         , deepseq
-                        , parallel
+                        , ghc-prim
+                        , integer-gmp
                         , monad-parallel
+                        , mtl
+                        , parallel
 
     ghc-options:        -threaded -with-rtsopts=-N4
     default-language:    Haskell2010
@@ -40,15 +40,15 @@ executable clt13-tests
     default-language:     Haskell2010
     main-is:              Test.hs
     build-depends:        base >=4.8 && <4.9
-                        , containers
-                        , bytestring
-                        , integer-gmp
-                        , parallel
-                        , mtl
-                        , crypto-api
                         , DRBG
-                        , ghc-prim
+                        , bytestring
+                        , cereal
+                        , containers
+                        , crypto-api
                         , deepseq
-                        , parallel
+                        , ghc-prim
+                        , integer-gmp
                         , monad-parallel
+                        , mtl
+                        , parallel
     ghc-options:        -O2 -threaded -fprof-auto "-with-rtsopts=-N4 -p"

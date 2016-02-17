@@ -2,7 +2,6 @@
 
 module CLT13.IndexSet where
 
-import Control.Parallel.Strategies (NFData)
 import qualified Data.Map.Strict as M
 
 type Power    = Int
@@ -14,6 +13,17 @@ indexUnion = M.unionWith (+)
 
 indexUnions :: [IndexSet] -> IndexSet
 indexUnions = M.unionsWith (+)
+
+indexEq :: IndexSet -> IndexSet -> Bool
+indexEq x y = M.null (indexSub x y) && M.null (indexSub y x)
+
+indexNeq :: IndexSet -> IndexSet -> Bool
+indexNeq x y = not (indexEq x y)
+
+indexSub :: IndexSet -> IndexSet -> IndexSet
+indexSub a b = M.filter (/= 0) $ M.differenceWith subMaybe a b
+  where
+    subMaybe x y = let z = x - y in if z <= 0 then Nothing else Just z
 
 -- constructors for IndexSet from Index
 pow :: [Index] -> Power -> IndexSet

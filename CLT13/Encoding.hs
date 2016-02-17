@@ -13,13 +13,14 @@ import CLT13.Util
 import Control.Monad
 import Control.Parallel.Strategies (NFData)
 import Data.List (zip4)
+import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 import qualified Data.Map as M
 
 data Encoding = Encoding {
     ix  :: IndexSet,
     val :: Integer
-} deriving (Generic, NFData)
+} deriving (Generic, NFData, Serialize)
 
 encode :: [Integer] -> IndexSet -> MMap -> Rand Encoding
 encode ms ix mmap
@@ -42,14 +43,14 @@ isZero (PublicParams {..}) c = sizeBase2 x < sizeBase2 modulus - threshold
                       in if x' > div modulus 2 then x' - modulus else x'
 
 add :: PublicParams -> Encoding -> Encoding -> Encoding
-add pp x y | ix x /= ix y = error "[add] cannot add encodings with different indices!"
-           | otherwise    = Encoding (ix x) val'
+add pp x y | indexNeq (ix x) (ix y) = error "[add] cannot add encodings with different indices!"
+           | otherwise = Encoding (ix x) val'
   where
     val' = val x + val y `mod` modulus pp
 
 sub :: PublicParams -> Encoding -> Encoding -> Encoding
-sub pp x y | ix x /= ix y = error "[sub] cannot subtract encodings with different indices!"
-           | otherwise    = Encoding (ix x) val'
+sub pp x y | indexNeq (ix x) (ix y) = error "[sub] cannot subtract encodings with different indices!"
+           | otherwise = Encoding (ix x) val'
   where
     val' = val x - val y `mod` modulus pp
 
