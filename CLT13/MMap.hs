@@ -90,8 +90,11 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
     return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
 
 genPs :: Bool -> Int -> Int -> Rand [Integer]
-genPs verbose n eta = let eta' = 4000
+genPs verbose n eta =
+    let eta' = head $ filter ((>1000) . mod eta) (iterate (+100) 3000)
     in if eta > eta' then do
+        when verbose $ traceM ("eta' = " ++ show eta')
+        when verbose $ traceM ("eta % eta' = " ++ show (mod eta eta'))
         let nchunks = ceiling (fromIntegral eta / fromIntegral eta')
         when verbose $ traceM ("nchunks = " ++ show nchunks)
         forM [0..n-1] $ \i -> do
