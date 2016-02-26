@@ -95,7 +95,7 @@ genPs verbose n eta = let eta' = 4000
         let nchunks = ceiling (fromIntegral eta / fromIntegral eta')
         when verbose $ traceM ("nchunks = " ++ show nchunks)
         forM [0..n-1] $ \i -> do
-            let size = if i < n-1 then eta' else eta - (n-1)*eta'
+            let size = if i < n-1 then eta' else eta - (nchunks-1)*eta'
             when verbose $ traceM ("chunk size = " ++ show size)
             chunks <- randPrimes nchunks size
             forceM chunks
