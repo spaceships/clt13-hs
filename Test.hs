@@ -23,7 +23,7 @@ main = do
         {-nzs      = 153-}
         {-topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]-}
 
-    mmap <- setup True lambda kappa nzs topLevel
+    mmap <- setup True lambda kappa nzs Nothing topLevel
     let pp = publicParams mmap
     let MMap { x0, params } = mmap
 

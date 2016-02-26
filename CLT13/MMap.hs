@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ParallelListComp #-}
 
 module CLT13.MMap where
 
@@ -8,6 +9,8 @@ import CLT13.Rand
 import CLT13.Util
 
 import Control.Monad
+import Data.Maybe (fromMaybe)
+import Debug.Trace
 import qualified Data.Map.Strict as M
 
 data Params = Params {
@@ -42,8 +45,8 @@ data PublicParams = PublicParams {
 publicParams :: MMap -> PublicParams
 publicParams mmap = PublicParams (x0 mmap) (pzt mmap) (nu (params mmap))
 
-genParams :: Int -> Int -> Int -> Params
-genParams λ κ nzs = Params λ κ nzs α β η n nu ρ
+genParams :: Int -> Int -> Int -> Maybe Int -> Params
+genParams λ κ nzs n_ = Params λ κ nzs α β η n nu ρ
   where
     α   = λ
     β   = λ
@@ -51,17 +54,17 @@ genParams λ κ nzs = Params λ κ nzs α β η n nu ρ
     ρ_f = κ * (ρ + α + 2)
     η   = ρ_f + α + 2*β + λ + 8
     nu  = η - β - ρ_f - λ - 3
-    n   = η * floor (logBase 2 (fromIntegral λ))
+    n   = fromMaybe (η * floor (logBase 2 (fromIntegral λ))) n_
 
-setup :: Bool -> Int -> Int -> Int -> IndexSet -> IO MMap
-setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
+setup :: Bool -> Int -> Int -> Int -> Maybe Int -> IndexSet -> IO MMap
+setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
     when verbose $ putStrLn "generate the mmap parameters"
-    let params = genParams lambda_ kappa_ nzs_
+    let params = genParams lambda_ kappa_ nzs_ n_
         Params {..} = params
     when verbose $ print params
 
     when verbose $ putStrLn "generate the p_i's"
-    ps <- randIO (randPrimes n eta)
+    ps <- randIO (genPs n eta)
     forceM ps
 
     when verbose $ putStrLn "multiply them to x0"
@@ -85,6 +88,19 @@ setup verbose lambda_ kappa_ nzs_ topLevelIndex = do
     forceM pzt
 
     return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
+
+genPs :: Int -> Int -> Rand [Integer]
+genPs n eta =
+    if eta > 460 then do
+        let eta'    = 460
+            nchunks = eta `div` eta'
+        traceShowM nchunks
+        forM [0..n-1] $ \i -> do
+            let size = if i < n-1 then eta' else eta - (n-1)*eta'
+            chunks <- randPrimes nchunks size
+            return (product chunks)
+    else do
+        randPrimes n eta
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
 genCrtCoeffs ps x0 = pmap crt_coeff ps
