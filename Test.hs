@@ -18,12 +18,13 @@ main = do
         kappa    = 2
         nzs      = 10
         topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]
-    {-let lambda   = 4-}
-        {-kappa    = 29-}
-        {-nzs      = 153-}
+    {-let lambda   = 17-}
+        {-kappa    = 200-}
+        {-nzs      = 50-}
+        {-n        = Just 2-}
         {-topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]-}
 
-    mmap <- setup True lambda kappa nzs Nothing topLevel
+    mmap <- setup True lambda kappa nzs n topLevel
     let pp = publicParams mmap
     let MMap { x0, params } = mmap
 

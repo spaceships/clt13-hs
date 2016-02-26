@@ -64,7 +64,7 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
     when verbose $ print params
 
     when verbose $ putStrLn "generate the p_i's"
-    ps <- randIO (genPs n eta)
+    ps <- randIO (genPs verbose n eta)
     forceM ps
 
     when verbose $ putStrLn "multiply them to x0"
@@ -89,15 +89,16 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
 
     return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
 
-genPs :: Int -> Int -> Rand [Integer]
-genPs n eta =
-    if eta > 460 then do
-        let eta'    = 460
-            nchunks = eta `div` eta'
-        traceShowM nchunks
+genPs :: Bool -> Int -> Int -> Rand [Integer]
+genPs verbose n eta = let eta' = 4000
+    in if eta > eta' then do
+        let nchunks = ceiling (fromIntegral eta / fromIntegral eta')
+        when verbose $ traceM ("nchunks = " ++ show nchunks)
         forM [0..n-1] $ \i -> do
             let size = if i < n-1 then eta' else eta - (n-1)*eta'
+            when verbose $ traceM ("chunk size = " ++ show size)
             chunks <- randPrimes nchunks size
+            forceM chunks
             return (product chunks)
     else do
         randPrimes n eta
