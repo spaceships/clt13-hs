@@ -18,6 +18,7 @@ main = do
         kappa    = 2
         nzs      = 10
         topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]
+        n        = Just 2
     {-let lambda   = 17-}
         {-kappa    = 200-}
         {-nzs      = 50-}
