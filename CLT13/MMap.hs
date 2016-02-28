@@ -64,7 +64,7 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
     when verbose $ print params
 
     when verbose $ putStrLn "generate the p_i's"
-    ps <- randIO (genPs verbose n eta)
+    ps <- randIO (genPs verbose n kappa eta)
     forceM ps
 
     when verbose $ putStrLn "multiply them to x0"
@@ -89,9 +89,9 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
 
     return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
 
-genPs :: Bool -> Int -> Int -> Rand [Integer]
-genPs verbose n eta =
-    let eta' = head $ filter ((>1000) . mod eta) (iterate (+100) 3000)
+genPs :: Bool -> Int -> Int -> Int -> Rand [Integer]
+genPs verbose n kappa eta =
+    let eta' = head $ filter ((>10*kappa ) . mod eta) (iterate (+100) 3000)
     in if eta > eta' then do
         when verbose $ traceM ("eta' = " ++ show eta')
         when verbose $ traceM ("eta % eta' = " ++ show (mod eta eta'))
