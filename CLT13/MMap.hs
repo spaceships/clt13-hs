@@ -91,19 +91,21 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
 
 genPs :: Bool -> Int -> Int -> Int -> Rand [Integer]
 genPs verbose n kappa eta =
-    let eta' = head $ filter ((>10*kappa ) . mod eta) (iterate (+100) 3000)
-    in if eta > eta' then do
+    if eta > 10*kappa then do
+        let eta' = head $ filter ((>2*kappa ) . mod eta) (iterate (+100) 420)
         when verbose $ traceM ("eta' = " ++ show eta')
         when verbose $ traceM ("eta % eta' = " ++ show (mod eta eta'))
         let nchunks = ceiling (fromIntegral eta / fromIntegral eta')
         when verbose $ traceM ("nchunks = " ++ show nchunks)
-        forM [0..n-1] $ \i -> do
-            let size = if i < n-1 then eta' else eta - (nchunks-1)*eta'
-            when verbose $ traceM ("chunk size = " ++ show size)
-            chunks <- randPrimes nchunks size
-            forceM chunks
-            return (product chunks)
+        forM [0..n-1] $ \_ -> do
+            chunks    <- randPrimes (nchunks-1) eta'
+            lastChunk <- randPrimes 1 (eta - (nchunks-1)*eta')
+            forceM (chunks ++ lastChunk)
+            res <- return (product (chunks ++ lastChunk))
+            traceShowM (sizeBase2 res)
+            return res
     else do
+        traceM "EHLEKJFKE"
         randPrimes n eta
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
