@@ -2,6 +2,7 @@
 {-# LANGUAGE ParallelListComp #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE CPP #-}
 
 module CLT13.Encoding where
 
@@ -29,10 +30,17 @@ encode ms ix mmap
     | length ms < n = encode (ms ++ replicate (n - length ms) 0) ix mmap
     | otherwise     = do
         rs <- replicateM n (randInteger rho)
-        let c   = sum [ (mod m g + r * g) * crt | m <- ms | g <- gs | r <- rs | crt <- crt_coeffs ]
-            zs  = [ (zinvs!!i)^pow | (i,pow) <- M.toList ix ]
-            val = foldr (\zinv c -> c * zinv `mod` x0) c zs
-        return $ Encoding ix val
+        let zinv = prodMod [ (zinvs!!i)^pow | (i,pow) <- M.toList ix ] x0
+-- #if OPTIMIZATION_CRT_TREE
+        let c' = doCrt crt [ (mod m g + r * g) | m <- ms | g <- gs | r <- rs ]
+        traceShowM $ sizeBase2 c'
+-- #else
+        let c = sumMod [ (mod m g + r * g) * coeff | m <- ms | g <- gs | r <- rs | coeff <- crt_coeffs ] x0
+        traceShowM $ sizeBase2 c
+
+        when (c /= c') (traceM "c != c'")
+-- #endif
+        return $ Encoding ix (mulMod c zinv x0)
     where
         MMap   {..} = mmap
         Params {..} = params

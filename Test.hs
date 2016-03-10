@@ -14,14 +14,14 @@ import Control.Parallel.Strategies
 import qualified Data.Map as M
 
 main = do
-    {-let lambda   = 20-}
-        {-kappa    = 2-}
-        {-nzs      = 10-}
+    let lambda   = 20
+        kappa    = 2
+        nzs      = 10
+        n        = Nothing
+    {-let lambda   = 21-}
+        {-kappa    = 337-}
+        {-nzs      = 153-}
         {-n        = Just 2-}
-    let lambda   = 21
-        kappa    = 337
-        nzs      = 153
-        n        = Just 2
         topLevel = M.fromList [ (i,1) | i <- [0..nzs-1] ]
 
     mmap <- setup True lambda kappa nzs n topLevel
