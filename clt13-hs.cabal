@@ -51,4 +51,4 @@ executable clt13-tests
                         , monad-parallel
                         , mtl
                         , parallel
-    ghc-options:        -O2 -threaded -fprof-auto "-with-rtsopts=-N4 -p"
+    ghc-options:        -O2 -threaded "-with-rtsopts=-N4"

@@ -1,8 +1,11 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE CPP #-}
 
 module CLT13.MMap where
+
+#define OPTIMIZATION_COMPOSITE_PS 1
 
 import CLT13.IndexSet
 import CLT13.Rand
@@ -27,7 +30,6 @@ data Params = Params {
 
 data MMap = MMap {
     params     :: Params,
-    ps         :: [Integer],
     gs         :: [Integer],
     zinvs      :: [Integer],
     crt_coeffs :: [Integer],
@@ -87,10 +89,11 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevelIndex = do
     pzt <- randIO (genZeroTester n beta zs topLevelIndex gs ps x0)
     forceM pzt
 
-    return $ MMap params ps gs zinvs crt_coeffs pzt x0 topLevelIndex
+    return $ MMap params gs zinvs crt_coeffs pzt x0 topLevelIndex
 
 genPs :: Bool -> Int -> Int -> Int -> Rand [Integer]
 genPs verbose n kappa eta =
+#if OPTIMIZATION_COMPOSITE_PS
     if eta > 10*kappa then do
         let eta' = head $ filter ((>2*kappa ) . mod eta) (iterate (+100) 420)
         when verbose $ traceM ("eta' = " ++ show eta')
@@ -101,11 +104,9 @@ genPs verbose n kappa eta =
             chunks    <- randPrimes (nchunks-1) eta'
             lastChunk <- randPrimes 1 (eta - (nchunks-1)*eta')
             forceM (chunks ++ lastChunk)
-            res <- return (product (chunks ++ lastChunk))
-            traceShowM (sizeBase2 res)
-            return res
+            return (product (chunks ++ lastChunk))
     else do
-        traceM "EHLEKJFKE"
+#endif
         randPrimes n eta
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
