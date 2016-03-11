@@ -18,7 +18,7 @@ import Text.Printf
 import qualified Data.Map.Strict as M
 import qualified GHC.Integer.GMP.Internals as GMP
 
--- #if OPTIMIZATION_CRT_TREE
+#if OPTIMIZATION_CRT_TREE
 data CrtTree = CrtNode {
     crt_n     :: Int,
     left      :: CrtTree,
@@ -32,7 +32,7 @@ data CrtTree = CrtNode {
 crtMod :: CrtTree -> Integer
 crtMod (CrtNode { crt_mod }) = crt_mod
 crtMod (CrtLeaf x) = x
--- #endif
+#endif
 
 data Params = Params {
     lambda :: Int,
@@ -53,11 +53,11 @@ data MMap = MMap {
     pzt        :: Integer,
     x0         :: Integer,
     topLevel   :: IndexSet,
--- #if OPTIMIZATION_CRT_TREE
-    crt :: CrtTree,
--- #else
+#if OPTIMIZATION_CRT_TREE
+    crt :: CrtTree
+#else
     crt_coeffs :: [Integer]
--- #endif
+#endif
 } deriving (Show)
 
 data PublicParams = PublicParams {
@@ -87,7 +87,7 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevel = do
         Params {..} = params
     when verbose $ print params
 
--- #if OPTIMIZATION_CRT_TREE
+#if OPTIMIZATION_CRT_TREE
     let loop = do when verbose $ putStrLn "generate the p_i's"
                   ps <- randIO (genPs verbose n kappa eta)
                   forceM ps
@@ -100,22 +100,20 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevel = do
                           let x0 = crtMod crt
                           return (ps, x0, crt)
 
-    (ps, x0', crt) <- loop
--- #else
-    {-when verbose $ putStrLn "generate the p_i's"-}
-    {-ps <- randIO (genPs verbose n kappa eta)-}
-    {-forceM ps-}
+    (ps, x0, crt) <- loop
+#else
+    when verbose $ putStrLn "generate the p_i's"
+    ps <- randIO (genPs verbose n kappa eta)
+    forceM ps
 
     when verbose $ putStrLn "multiply them to x0"
     let x0 = product ps
     forceM x0
 
-    when (x0 /= x0') (traceM "x0 != x0'")
-
     when verbose $ putStrLn "generate the crt coeffs"
     let crt_coeffs = genCrtCoeffs ps x0
     forceM crt_coeffs
--- #endif
+#endif
 
     when verbose $ putStrLn "generate the g_i's"
     gs <- randIO (randPrimes n alpha)
@@ -135,16 +133,16 @@ setup verbose lambda_ kappa_ nzs_ n_ topLevel = do
                   , pzt
                   , x0
                   , topLevel
--- #if OPTIMIZATION_CRT_TREE
+#if OPTIMIZATION_CRT_TREE
                   , crt
--- #else
+#else
                   , crt_coeffs
--- #endif
+#endif
                   }
 
 genPs :: Bool -> Int -> Int -> Int -> Rand [Integer]
 genPs verbose n kappa eta =
--- #if OPTIMIZATION_COMPOSITE_PS
+#if OPTIMIZATION_COMPOSITE_PS
     if eta > 10*kappa then do
         let eta' = head $ filter ((>2*kappa ) . mod eta) (iterate (+100) 420)
         when verbose $ traceM ("eta' = " ++ show eta')
@@ -157,7 +155,7 @@ genPs verbose n kappa eta =
             forceM (chunks ++ lastChunk)
             return (product (chunks ++ lastChunk))
     else do
--- #endif
+#endif
         randPrimes n eta
 
 genCrtCoeffs :: [Integer] -> Integer -> [Integer]
@@ -195,7 +193,7 @@ genZeroTester n beta zs pows gs ps x0 = do
     forloop (g, p, h) =
         (invMod g p * zkappa `mod` p) * h * (x0 `div` p)
 
--- #if OPTIMIZATION_CRT_TREE
+#if OPTIMIZATION_CRT_TREE
 gcdExt :: Integer -> Integer -> (Integer, Integer, Integer)
 gcdExt 0 b = (b, 0, 1)
 gcdExt a b = let (g, s, t) = gcdExt (b `mod` a) a
@@ -223,4 +221,4 @@ doCrt (CrtNode {..}) xs  =
     n = length xs `div` 2
     val_left  = doCrt left  (take n xs)
     val_right = doCrt right (drop n xs)
--- #endif
+#endif

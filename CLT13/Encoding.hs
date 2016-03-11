@@ -31,15 +31,11 @@ encode ms ix mmap
     | otherwise     = do
         rs <- replicateM n (randInteger rho)
         let zinv = prodMod [ (zinvs!!i)^pow | (i,pow) <- M.toList ix ] x0
--- #if OPTIMIZATION_CRT_TREE
-        let c' = doCrt crt [ (mod m g + r * g) | m <- ms | g <- gs | r <- rs ]
-        traceShowM $ sizeBase2 c'
--- #else
+#if OPTIMIZATION_CRT_TREE
+        let c = doCrt crt [ (mod m g + r * g) | m <- ms | g <- gs | r <- rs ]
+#else
         let c = sumMod [ (mod m g + r * g) * coeff | m <- ms | g <- gs | r <- rs | coeff <- crt_coeffs ] x0
-        traceShowM $ sizeBase2 c
-
-        when (c /= c') (traceM "c != c'")
--- #endif
+#endif
         return $ Encoding ix (mulMod c zinv x0)
     where
         MMap   {..} = mmap
