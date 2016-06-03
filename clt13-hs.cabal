@@ -34,7 +34,7 @@ library
                         , parallel
 
     ghc-options:        -threaded -with-rtsopts=-N4
-    cpp-options:        -DOPTIMIZATION_CRT_TREE=0 -- XXX: currently broken
+    cpp-options:        -DOPTIMIZATION_CRT_TREE=0
                         -DOPTIMIZATION_COMPOSITE_PS=1
 
     default-language:    Haskell2010
@@ -55,5 +55,5 @@ executable clt13-tests
                         , mtl
                         , parallel
     ghc-options:        -O2 -threaded "-with-rtsopts=-N4"
-    cpp-options:        -DOPTIMIZATION_CRT_TREE=0 -- XXX: currently broken
+    cpp-options:        -DOPTIMIZATION_CRT_TREE=0
                         -DOPTIMIZATION_COMPOSITE_PS=1
