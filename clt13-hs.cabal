@@ -20,7 +20,7 @@ library
                         , CLT13.Rand
                         , CLT13.Util
 
-    build-depends:        base >=4.8 && <4.9
+    build-depends:        base
                         , DRBG
                         , bytestring
                         , cereal
@@ -42,7 +42,7 @@ library
 executable clt13-tests
     default-language:     Haskell2010
     main-is:              Test.hs
-    build-depends:        base >=4.8 && <4.9
+    build-depends:        base
                         , DRBG
                         , bytestring
                         , cereal
